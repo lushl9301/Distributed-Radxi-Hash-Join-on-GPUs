@@ -1,0 +1,1 @@
+add_library(hj_core ../empty.cpp Configuration.h)

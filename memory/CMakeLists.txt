@@ -1,0 +1,1 @@
+add_library(hj_memory Pool.cpp Pool.h)
