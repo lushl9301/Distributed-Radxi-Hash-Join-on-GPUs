@@ -18,8 +18,7 @@ namespace histograms {
 GlobalHistogram::GlobalHistogram(LocalHistogram *localHistogram) {
 
   this->localHistogram = localHistogram;
-  this->values = (uint64_t *) calloc(hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT,
-									 sizeof(uint64_t));
+  this->values = (uint64_t *) calloc(hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT, sizeof(uint64_t));
 
 }
 
@@ -35,9 +34,12 @@ void GlobalHistogram::computeGlobalHistogram() {
   hpcjoin::performance::Measurements::startHistogramGlobalHistogramComputation();
 #endif
 
-  MPI_Allreduce(this->localHistogram->getLocalHistogram(), this->values,
-				hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT, MPI_UINT64_T, MPI_SUM,
-				MPI_COMM_WORLD);
+  MPI_Allreduce(this->localHistogram->getLocalHistogram(),
+                this->values,
+                hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT,
+                MPI_UINT64_T,
+                MPI_SUM,
+                MPI_COMM_WORLD);
 
 #ifdef MEASUREMENT_DETAILS_HISTOGRAM
   hpcjoin::performance::Measurements::stopHistogramGlobalHistogramComputation();

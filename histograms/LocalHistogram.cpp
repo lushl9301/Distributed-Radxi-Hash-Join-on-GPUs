@@ -22,8 +22,7 @@ namespace histograms {
 LocalHistogram::LocalHistogram(hpcjoin::data::Relation *relation) {
 
   this->relation = relation;
-  this->values = (uint64_t *) calloc(hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT,
-									 sizeof(uint64_t));
+  this->values = (uint64_t *) calloc(hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT, sizeof(uint64_t));
 
 }
 
@@ -43,10 +42,8 @@ void LocalHistogram::computeLocalHistogram() {
   hpcjoin::data::Tuple *const data = relation->getData();
 
   for (uint64_t i = 0; i < numberOfElements; ++i) {
-	uint32_t partitionIdx = HASH_BIT_MODULO(data[i].key,
-											hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT -
-												1, 0);
-	++(values[partitionIdx]);
+    auto partitionIdx = HASH_BIT_MODULO(data[i].key, hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT - 1, 0);
+    ++(values[partitionIdx]);
   }
 
 #ifdef MEASUREMENT_DETAILS_HISTOGRAM
