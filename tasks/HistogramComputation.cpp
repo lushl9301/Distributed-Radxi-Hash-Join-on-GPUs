@@ -15,8 +15,8 @@ namespace hpcjoin {
 namespace tasks {
 
 HistogramComputation::HistogramComputation(uint32_t numberOfNodes, uint32_t nodeId,
-										   hpcjoin::data::Relation *innerRelation,
-										   hpcjoin::data::Relation *outerRelation) {
+                                           hpcjoin::data::Relation *innerRelation,
+                                           hpcjoin::data::Relation *outerRelation) {
 
   this->nodeId = nodeId;
   this->numberOfNodes = numberOfNodes;
@@ -27,23 +27,21 @@ HistogramComputation::HistogramComputation(uint32_t numberOfNodes, uint32_t node
   this->innerRelationLocalHistogram = new hpcjoin::histograms::LocalHistogram(innerRelation);
   this->outerRelationLocalHistogram = new hpcjoin::histograms::LocalHistogram(outerRelation);
 
-  this->innerRelationGlobalHistogram = new hpcjoin::histograms::GlobalHistogram(
-	  this->innerRelationLocalHistogram);
-  this->outerRelationGlobalHistogram = new hpcjoin::histograms::GlobalHistogram(
-	  this->outerRelationLocalHistogram);
+  this->innerRelationGlobalHistogram = new hpcjoin::histograms::GlobalHistogram(this->innerRelationLocalHistogram);
+  this->outerRelationGlobalHistogram = new hpcjoin::histograms::GlobalHistogram(this->outerRelationLocalHistogram);
 
   this->assignment = new hpcjoin::histograms::AssignmentMap(this->numberOfNodes,
-															this->innerRelationGlobalHistogram,
-															this->outerRelationGlobalHistogram);
+                                                            this->innerRelationGlobalHistogram,
+                                                            this->outerRelationGlobalHistogram);
 
   this->innerOffsets = new hpcjoin::histograms::OffsetMap(this->numberOfNodes,
-														  this->innerRelationLocalHistogram,
-														  this->innerRelationGlobalHistogram,
-														  this->assignment);
+                                                          this->innerRelationLocalHistogram,
+                                                          this->innerRelationGlobalHistogram,
+                                                          this->assignment);
   this->outerOffsets = new hpcjoin::histograms::OffsetMap(this->numberOfNodes,
-														  this->outerRelationLocalHistogram,
-														  this->outerRelationGlobalHistogram,
-														  this->assignment);
+                                                          this->outerRelationLocalHistogram,
+                                                          this->outerRelationGlobalHistogram,
+                                                          this->assignment);
 
 }
 

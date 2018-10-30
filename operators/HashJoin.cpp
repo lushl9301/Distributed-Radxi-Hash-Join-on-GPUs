@@ -27,7 +27,7 @@ uint64_t HashJoin::RESULT_COUNTER = 0;
 std::queue<hpcjoin::tasks::Task *> HashJoin::TASK_QUEUE;
 
 HashJoin::HashJoin(uint32_t numberOfNodes, uint32_t nodeId, hpcjoin::data::Relation *innerRelation,
-				   hpcjoin::data::Relation *outerRelation) {
+                   hpcjoin::data::Relation *outerRelation) {
 
   this->nodeId = nodeId;
   this->numberOfNodes = numberOfNodes;
@@ -41,24 +41,25 @@ HashJoin::~HashJoin() {
 }
 
 void HashJoin::join() {
+  using Measurements = hpcjoin::performance::Measurements;
 
   /**********************************************************************/
 
   MPI_Barrier(MPI_COMM_WORLD);
-  hpcjoin::performance::Measurements::startJoin();
+  Measurements::startJoin();
 
   /**********************************************************************/
 
   /**
    * Histogram computation
    */
-
-  hpcjoin::performance::Measurements::startHistogramComputation();
-  hpcjoin::tasks::HistogramComputation *histogramComputation = new hpcjoin::tasks::HistogramComputation(
-	  this->numberOfNodes, this->nodeId, this->innerRelation,
-	  this->outerRelation);
+  Measurements::startHistogramComputation();
+  auto *histogramComputation = new hpcjoin::tasks::HistogramComputation(this->numberOfNodes,
+                                                                        this->nodeId,
+                                                                        this->innerRelation,
+                                                                        this->outerRelation);
   histogramComputation->execute();
-  hpcjoin::performance::Measurements::stopHistogramComputation();
+  Measurements::stopHistogramComputation();
   JOIN_MEM_DEBUG("Histogram phase completed");
 
   /**********************************************************************/
@@ -67,23 +68,23 @@ void HashJoin::join() {
    * Window allocation
    */
 
-  hpcjoin::performance::Measurements::startWindowAllocation();
-  hpcjoin::data::Window *innerWindow = new hpcjoin::data::Window(this->numberOfNodes,
-																 this->nodeId,
-																 histogramComputation->getAssignment(),
-																 histogramComputation->getInnerRelationLocalHistogram(),
-																 histogramComputation->getInnerRelationGlobalHistogram(),
-																 histogramComputation->getInnerRelationBaseOffsets(),
-																 histogramComputation->getInnerRelationWriteOffsets());
+  Measurements::startWindowAllocation();
+  auto *innerWindow = new hpcjoin::data::Window(this->numberOfNodes,
+                                                this->nodeId,
+                                                histogramComputation->getAssignment(),
+                                                histogramComputation->getInnerRelationLocalHistogram(),
+                                                histogramComputation->getInnerRelationGlobalHistogram(),
+                                                histogramComputation->getInnerRelationBaseOffsets(),
+                                                histogramComputation->getInnerRelationWriteOffsets());
 
-  hpcjoin::data::Window *outerWindow = new hpcjoin::data::Window(this->numberOfNodes,
-																 this->nodeId,
-																 histogramComputation->getAssignment(),
-																 histogramComputation->getOuterRelationLocalHistogram(),
-																 histogramComputation->getOuterRelationGlobalHistogram(),
-																 histogramComputation->getOuterRelationBaseOffsets(),
-																 histogramComputation->getOuterRelationWriteOffsets());
-  hpcjoin::performance::Measurements::stopWindowAllocation();
+  auto *outerWindow = new hpcjoin::data::Window(this->numberOfNodes,
+                                                this->nodeId,
+                                                histogramComputation->getAssignment(),
+                                                histogramComputation->getOuterRelationLocalHistogram(),
+                                                histogramComputation->getOuterRelationGlobalHistogram(),
+                                                histogramComputation->getOuterRelationBaseOffsets(),
+                                                histogramComputation->getOuterRelationWriteOffsets());
+  Measurements::stopWindowAllocation();
   JOIN_MEM_DEBUG("Window allocated");
 
   /**********************************************************************/
@@ -92,12 +93,14 @@ void HashJoin::join() {
    * Network partitioning
    */
 
-  hpcjoin::performance::Measurements::startNetworkPartitioning();
-  hpcjoin::tasks::NetworkPartitioning *networkPartitioning = new hpcjoin::tasks::NetworkPartitioning(
-	  this->nodeId, this->innerRelation, this->outerRelation, innerWindow,
-	  outerWindow);
+  Measurements::startNetworkPartitioning();
+  auto *networkPartitioning = new hpcjoin::tasks::NetworkPartitioning(this->nodeId,
+                                                                      this->innerRelation,
+                                                                      this->outerRelation,
+                                                                      innerWindow,
+                                                                      outerWindow);
   networkPartitioning->execute();
-  hpcjoin::performance::Measurements::stopNetworkPartitioning();
+  Measurements::stopNetworkPartitioning();
   JOIN_MEM_DEBUG("Network phase completed");
 
   // OPTIMIZATION Save memory as soon as possible
@@ -111,9 +114,9 @@ void HashJoin::join() {
    * Main synchronization
    */
 
-  hpcjoin::performance::Measurements::startWaitingForNetworkCompletion();
+  Measurements::startWaitingForNetworkCompletion();
   MPI_Barrier(MPI_COMM_WORLD);
-  hpcjoin::performance::Measurements::stopWaitingForNetworkCompletion();
+  Measurements::stopWaitingForNetworkCompletion();
 
   /**********************************************************************/
 
@@ -121,34 +124,32 @@ void HashJoin::join() {
    * Prepare transition
    */
 
-  hpcjoin::performance::Measurements::startLocalProcessingPreparations();
+  Measurements::startLocalProcessingPreparations();
   if (hpcjoin::core::Configuration::ENABLE_TWO_LEVEL_PARTITIONING) {
-	//hpcjoin::memory::Pool::allocate((innerWindow->computeLocalWindowSize() + outerWindow->computeLocalWindowSize())*sizeof(hpcjoin::data::Tuple));
-	hpcjoin::memory::Pool::reset();
+    //hpcjoin::memory::Pool::allocate((innerWindow->computeLocalWindowSize() + outerWindow->computeLocalWindowSize())*sizeof(hpcjoin::data::Tuple));
+    hpcjoin::memory::Pool::reset();
   }
   // Create initial set of tasks
   uint32_t *assignment = histogramComputation->getAssignment();
   for (uint32_t p = 0; p < hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT; ++p) {
-	if (assignment[p] == this->nodeId) {
-	  hpcjoin::data::CompressedTuple *innerRelationPartition = innerWindow->getPartition(
-		  p);
-	  uint64_t innerRelationPartitionSize = innerWindow->getPartitionSize(p);
-	  hpcjoin::data::CompressedTuple *outerRelationPartition = outerWindow->getPartition(
-		  p);
-	  uint64_t outerRelationPartitionSize = outerWindow->getPartitionSize(p);
+    if (assignment[p] == this->nodeId) {
+      hpcjoin::data::CompressedTuple *innerRelationPartition = innerWindow->getPartition(p);
+      uint64_t innerRelationPartitionSize = innerWindow->getPartitionSize(p);
+      hpcjoin::data::CompressedTuple *outerRelationPartition = outerWindow->getPartition(p);
+      uint64_t outerRelationPartitionSize = outerWindow->getPartitionSize(p);
 
-	  if (hpcjoin::core::Configuration::ENABLE_TWO_LEVEL_PARTITIONING) {
-		TASK_QUEUE.push(new hpcjoin::tasks::LocalPartitioning(
-			innerRelationPartitionSize, innerRelationPartition,
-			outerRelationPartitionSize, outerRelationPartition));
-	  } else {
-		TASK_QUEUE.push(
-			new hpcjoin::tasks::BuildProbe(innerRelationPartitionSize,
-										   innerRelationPartition,
-										   outerRelationPartitionSize,
-										   outerRelationPartition));
-	  }
-	}
+      if (hpcjoin::core::Configuration::ENABLE_TWO_LEVEL_PARTITIONING) {
+        TASK_QUEUE.push(new hpcjoin::tasks::LocalPartitioning(innerRelationPartitionSize,
+                                                              innerRelationPartition,
+                                                              outerRelationPartitionSize,
+                                                              outerRelationPartition));
+      } else {
+        TASK_QUEUE.push(new hpcjoin::tasks::BuildProbe(innerRelationPartitionSize,
+                                                       innerRelationPartition,
+                                                       outerRelationPartitionSize,
+                                                       outerRelationPartition));
+      }
+    }
   }
 
   // Delete the network related computation
@@ -157,7 +158,7 @@ void HashJoin::join() {
 
   JOIN_MEM_DEBUG("Local phase prepared");
 
-  hpcjoin::performance::Measurements::stopLocalProcessingPreparations();
+  Measurements::stopLocalProcessingPreparations();
 
   /**********************************************************************/
 
@@ -169,37 +170,37 @@ void HashJoin::join() {
   bool windowsDeleted = false;
 
   // Execute tasks
-  hpcjoin::performance::Measurements::startLocalProcessing();
+  Measurements::startLocalProcessing();
   while (TASK_QUEUE.size() > 0) {
 
-	hpcjoin::tasks::Task *task = TASK_QUEUE.front();
-	TASK_QUEUE.pop();
+    hpcjoin::tasks::Task *task = TASK_QUEUE.front();
+    TASK_QUEUE.pop();
 
-	// OPTIMIZATION When second partitioning pass is completed, windows are no longer required
-	if (hpcjoin::core::Configuration::ENABLE_TWO_LEVEL_PARTITIONING && windowsDeleted) {
-	  if (task->getType() == TASK_BUILD_PROBE) {
-		delete innerWindow;
-		delete outerWindow;
-		windowsDeleted = true;
-	  }
-	}
+    // OPTIMIZATION When second partitioning pass is completed, windows are no longer required
+    if (hpcjoin::core::Configuration::ENABLE_TWO_LEVEL_PARTITIONING && windowsDeleted) {
+      if (task->getType() == TASK_BUILD_PROBE) {
+        delete innerWindow;
+        delete outerWindow;
+        windowsDeleted = true;
+      }
+    }
 
-	task->execute();
-	delete task;
+    task->execute();
+    delete task;
 
   }
-  hpcjoin::performance::Measurements::stopLocalProcessing();
+  Measurements::stopLocalProcessing();
 
   JOIN_MEM_DEBUG("Local phase completed");
 
   /**********************************************************************/
 
-  hpcjoin::performance::Measurements::stopJoin();
+  Measurements::stopJoin();
 
   // OPTIMIZATION (see above)
   if (!windowsDeleted) {
-	delete innerWindow;
-	delete outerWindow;
+    delete innerWindow;
+    delete outerWindow;
   }
 
 }
