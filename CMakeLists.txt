@@ -10,6 +10,8 @@ set(MPI_C_COMPILER /opt/bin/mpicc)
 set(CMAKE_CXX_FLAGS "-O3 -std=c++11 -mavx -lpthread -lpapi -D MEASUREMENT_DETAILS_HISTOGRAM -D MEASUREMENT_DETAILS_NETWORK -D MEASUREMENT_DETAILS_LOCALPART -D MEASUREMENT_DETAILS_LOCALBP")
 set(MPI_CXX_FLAGS "-O3 -std=c++11 -mavx -lpthread -lpapi -D MEASUREMENT_DETAILS_HISTOGRAM -D MEASUREMENT_DETAILS_NETWORK -D MEASUREMENT_DETAILS_LOCALPART -D MEASUREMENT_DETAILS_LOCALBP")
 include_directories("/usr/local/include")
+#add_definitions("-D JOIN_DEBUG_PRINT")
+#add_definitions("-D JOIN_DEBUG_PRINT -D JOIN_MEM_PRINT")
 
 add_subdirectory(core)
 add_subdirectory(data)
