@@ -26,6 +26,8 @@
 #include "data/Tuple.h"
 
 int main(int argc, char *argv[]) {
+  using Measurements = hpcjoin::performance::Measurements;
+  using Pool = hpcjoin::memory::Pool;
 
   JOIN_MEM_DEBUG("Main Start");
 
@@ -46,16 +48,16 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &nodeId);
 
   JOIN_DEBUG("Main", "Node %d is preparing performance counters", nodeId);
-  hpcjoin::performance::Measurements::init(nodeId, numberOfNodes, "experiment");
+  Measurements::init(nodeId, numberOfNodes, "experiment");
 
-  hpcjoin::performance::Measurements::writeMetaData("NUMNODES", numberOfNodes);
-  hpcjoin::performance::Measurements::writeMetaData("NODEID", nodeId);
+  Measurements::writeMetaData("NUMNODES", numberOfNodes);
+  Measurements::writeMetaData("NODEID", nodeId);
 
   char hostname[1024];
   memset(hostname, 0, 1024);
   gethostname(hostname, 1023);
   JOIN_DEBUG("main", "Node %d on machine %s\n", nodeId, hostname);
-  hpcjoin::performance::Measurements::writeMetaData("HOST", hostname);
+  Measurements::writeMetaData("HOST", hostname);
 
   JOIN_ASSERT(numberOfNodes > 0, "Main", "Number of nodes not set");
   JOIN_ASSERT(nodeId >= 0, "Main", "Node id not set");
@@ -69,33 +71,27 @@ int main(int argc, char *argv[]) {
   uint64_t globalOuterRelationSize = ((uint64_t) numberOfNodes) * 200000;
 
   uint64_t localInnerRelationSize =
-	  (nodeId < numberOfNodes - 1) ? (globalInnerRelationSize / numberOfNodes) : (globalInnerRelationSize -
-		  (numberOfNodes - 1) *
-			  (globalInnerRelationSize /
-				  numberOfNodes));
+	  (nodeId < numberOfNodes - 1) ? (globalInnerRelationSize / numberOfNodes) : (globalInnerRelationSize
+		  - (numberOfNodes - 1) * (globalInnerRelationSize / numberOfNodes));
 
   uint64_t localOuterRelationSize =
-	  (nodeId < numberOfNodes - 1) ? (globalOuterRelationSize / numberOfNodes) : (globalOuterRelationSize -
-		  (numberOfNodes - 1) *
-			  (globalOuterRelationSize /
-				  numberOfNodes));
+	  (nodeId < numberOfNodes - 1) ? (globalOuterRelationSize / numberOfNodes) : (globalOuterRelationSize
+		  - (numberOfNodes - 1) * (globalOuterRelationSize / numberOfNodes));
 
-  hpcjoin::performance::Measurements::writeMetaData("GISZ", globalInnerRelationSize);
-  hpcjoin::performance::Measurements::writeMetaData("GOSZ", globalOuterRelationSize);
-  hpcjoin::performance::Measurements::writeMetaData("LISZ", localInnerRelationSize);
-  hpcjoin::performance::Measurements::writeMetaData("LOSZ", localOuterRelationSize);
+  Measurements::writeMetaData("GISZ", globalInnerRelationSize);
+  Measurements::writeMetaData("GOSZ", globalOuterRelationSize);
+  Measurements::writeMetaData("LISZ", localInnerRelationSize);
+  Measurements::writeMetaData("LOSZ", localOuterRelationSize);
 
-  hpcjoin::memory::Pool::allocate(
-	  hpcjoin::core::Configuration::ALLOCATION_FACTOR * (localInnerRelationSize + localOuterRelationSize) *
-		  sizeof(hpcjoin::data::Tuple));
-  hpcjoin::data::Relation *innerRelation = new hpcjoin::data::Relation(localInnerRelationSize,
-																	   globalInnerRelationSize);
-  hpcjoin::data::Relation *outerRelation = new hpcjoin::data::Relation(localOuterRelationSize,
-																	   globalOuterRelationSize);
+  Pool::allocate(static_cast<uint64_t>(hpcjoin::core::Configuration::ALLOCATION_FACTOR
+	  * (localInnerRelationSize + localOuterRelationSize)
+	  * sizeof(hpcjoin::data::Tuple)));
+  auto *innerRelation = new hpcjoin::data::Relation(localInnerRelationSize, globalInnerRelationSize);
+  auto *outerRelation = new hpcjoin::data::Relation(localOuterRelationSize, globalOuterRelationSize);
 
   JOIN_MEM_DEBUG("Relations created");
 
-  srand(1234 + nodeId);
+  srand(static_cast<unsigned int>(1234 + nodeId));
   innerRelation->fillUniqueValues(nodeId * (globalInnerRelationSize / numberOfNodes),
 								  nodeId * (globalInnerRelationSize / numberOfNodes));
   outerRelation->fillUniqueValues((numberOfNodes - nodeId - 1) * (globalOuterRelationSize / numberOfNodes),
@@ -114,8 +110,7 @@ int main(int argc, char *argv[]) {
 
   JOIN_DEBUG("Main", "Node %d is preparing join", nodeId);
 
-  hpcjoin::operators::HashJoin *hashJoin = new hpcjoin::operators::HashJoin(numberOfNodes, nodeId, innerRelation,
-																			outerRelation);
+  auto *hashJoin = new hpcjoin::operators::HashJoin(numberOfNodes, nodeId, innerRelation, outerRelation);
   JOIN_MEM_DEBUG("Join created");
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -133,11 +128,11 @@ int main(int argc, char *argv[]) {
   JOIN_DEBUG("Main", "Node %d finalizing measurements", nodeId);
 
   if (nodeId != hpcjoin::core::Configuration::RESULT_AGGREGATION_NODE) {
-	hpcjoin::performance::Measurements::sendMeasurementsToAggregator();
+	Measurements::sendMeasurementsToAggregator();
   } else {
-	hpcjoin::performance::Measurements::printMeasurements(numberOfNodes, nodeId);
+	Measurements::printMeasurements(numberOfNodes, nodeId);
   }
-  hpcjoin::performance::Measurements::storeAllMeasurements();
+  Measurements::storeAllMeasurements();
 
   delete hashJoin;
   // OPTIMIZATION innerRelation deleted during join

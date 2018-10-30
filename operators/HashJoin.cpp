@@ -171,7 +171,7 @@ void HashJoin::join() {
 
   // Execute tasks
   Measurements::startLocalProcessing();
-  while (TASK_QUEUE.size() > 0) {
+  while (!TASK_QUEUE.empty()) {
 
     hpcjoin::tasks::Task *task = TASK_QUEUE.front();
     TASK_QUEUE.pop();
