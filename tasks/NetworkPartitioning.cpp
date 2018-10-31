@@ -89,7 +89,7 @@ void NetworkPartitioning::partition(hpcjoin::data::Relation *relation, hpcjoin::
   hpcjoin::performance::Measurements::startNetworkPartitioningMemoryAllocation();
 #endif
 
-  hpcjoin::data::CompressedTuple *inMemoryBuffer = NULL;
+  hpcjoin::data::CompressedTuple *inMemoryBuffer = nullptr;
   int result = posix_memalign((void **) &(inMemoryBuffer), NETWORK_PARTITIONING_CACHELINE_SIZE, inMemoryBufferSize);
 
   JOIN_ASSERT(result == 0, "Network Partitioning", "Could not allocate in-memory buffer");
@@ -104,9 +104,9 @@ void NetworkPartitioning::partition(hpcjoin::data::Relation *relation, hpcjoin::
       __attribute__((aligned(NETWORK_PARTITIONING_CACHELINE_SIZE)));;
 
   JOIN_DEBUG("Network Partitioning", "Node %d is setting counter to zero", this->nodeId);
-  for (uint32_t p = 0; p < hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT; ++p) {
-    inCacheBuffer[p].data.inCacheCounter = 0;
-    inCacheBuffer[p].data.memoryCounter = 0;
+  for (auto &p : inCacheBuffer) {
+    p.data.inCacheCounter = 0;
+    p.data.memoryCounter = 0;
   }
 
 #ifdef MEASUREMENT_DETAILS_NETWORK
@@ -116,16 +116,15 @@ void NetworkPartitioning::partition(hpcjoin::data::Relation *relation, hpcjoin::
   for (uint64_t i = 0; i < numberOfElements; ++i) {
 
     // Compute partition
-    uint32_t
-        partitionId = HASH_BIT_MODULO(data[i].key, hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT - 1, 0);
-
+    auto partitionId = HASH_BIT_MODULO(data[i].key, hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT - 1, 0);
     // Save counter to register
     uint32_t inCacheCounter = inCacheBuffer[partitionId].data.inCacheCounter;
     uint32_t memoryCounter = inCacheBuffer[partitionId].data.memoryCounter;
 
     // Move data to cache line
-    hpcjoin::data::CompressedTuple *cacheLine = (hpcjoin::data::CompressedTuple *) (inCacheBuffer + partitionId);
+    auto *cacheLine = (hpcjoin::data::CompressedTuple *) (inCacheBuffer + partitionId);
     //cacheLine[inCacheCounter] = data[i];
+    // rid is going to take 27 bit, which is the payload_bits
     cacheLine[inCacheCounter].value =
         data[i].rid + ((data[i].key >> partitionBits) << (partitionBits + hpcjoin::core::Configuration::PAYLOAD_BITS));
     ++inCacheCounter;
@@ -144,21 +143,19 @@ void NetworkPartitioning::partition(hpcjoin::data::Relation *relation, hpcjoin::
       //JOIN_DEBUG("Network Partitioning", "Node %d has completed the stream write of cache line %d", this->nodeId, partitionId);
 
       // Check if memory buffer is full
-      if (memoryCounter %
-          hpcjoin::core::Configuration::CACHELINES_PER_MEMORY_BUFFER == 0) {
+      if (memoryCounter % hpcjoin::core::Configuration::CACHELINES_PER_MEMORY_BUFFER == 0) {
 
-        bool rewindBuffer = (memoryCounter ==
-            hpcjoin::core::Configuration::MEMORY_BUFFERS_PER_PARTITION *
-                hpcjoin::core::Configuration::CACHELINES_PER_MEMORY_BUFFER);
+        bool rewindBuffer = (memoryCounter == hpcjoin::core::Configuration::MEMORY_BUFFERS_PER_PARTITION
+            * hpcjoin::core::Configuration::CACHELINES_PER_MEMORY_BUFFER);
 
         //JOIN_DEBUG("Network Partitioning", "Node %d has a full memory buffer %d", this->nodeId, partitionId);
-        hpcjoin::data::CompressedTuple *inMemoryBufferLocation = reinterpret_cast<hpcjoin::data::CompressedTuple *>(
-            PARTITION_ACCESS(partitionId) +
-                (memoryCounter * NETWORK_PARTITIONING_CACHELINE_SIZE) -
-                (hpcjoin::core::Configuration::MEMORY_BUFFER_SIZE_BYTES));
-        window->write(partitionId, inMemoryBufferLocation,
-                      hpcjoin::core::Configuration::CACHELINES_PER_MEMORY_BUFFER *
-                          TUPLES_PER_CACHELINE, rewindBuffer);
+        auto *inMemoryBufferLocation = reinterpret_cast<hpcjoin::data::CompressedTuple *>(PARTITION_ACCESS(partitionId)
+            + (memoryCounter * NETWORK_PARTITIONING_CACHELINE_SIZE)
+            - (hpcjoin::core::Configuration::MEMORY_BUFFER_SIZE_BYTES));
+        window->write(partitionId,
+                      inMemoryBufferLocation,
+                      hpcjoin::core::Configuration::CACHELINES_PER_MEMORY_BUFFER * TUPLES_PER_CACHELINE,
+                      rewindBuffer);
 
         if (rewindBuffer) {
           memoryCounter = 0;
@@ -185,29 +182,27 @@ void NetworkPartitioning::partition(hpcjoin::data::Relation *relation, hpcjoin::
   hpcjoin::performance::Measurements::startNetworkPartitioningFlushPartitioning();
 #endif
 
-  // Flush remaining elements to memory buffers
+  // Flush remaining elements from cache to memory buffers
   for (uint32_t p = 0; p < hpcjoin::core::Configuration::NETWORK_PARTITIONING_COUNT; ++p) {
 
     uint32_t inCacheCounter = inCacheBuffer[p].data.inCacheCounter;
     uint32_t memoryCounter = inCacheBuffer[p].data.memoryCounter;
 
-    hpcjoin::data::CompressedTuple *cacheLine = (hpcjoin::data::CompressedTuple *) (
-        inCacheBuffer + p);
-    hpcjoin::data::CompressedTuple *inMemoryFreeSpace = reinterpret_cast<hpcjoin::data::CompressedTuple *>(
-        PARTITION_ACCESS(p) + (memoryCounter * NETWORK_PARTITIONING_CACHELINE_SIZE));
+    auto *cacheLine = (hpcjoin::data::CompressedTuple *) (inCacheBuffer + p);
+    auto *inMemoryFreeSpace = reinterpret_cast<hpcjoin::data::CompressedTuple *>(PARTITION_ACCESS(p)
+        + (memoryCounter * NETWORK_PARTITIONING_CACHELINE_SIZE));
     for (uint32_t t = 0; t < inCacheCounter; ++t) {
       inMemoryFreeSpace[t] = cacheLine[t];
     }
 
     uint32_t remainingTupleInMemory =
-        ((memoryCounter % hpcjoin::core::Configuration::CACHELINES_PER_MEMORY_BUFFER) *
-            TUPLES_PER_CACHELINE) + inCacheCounter;
+        ((memoryCounter % hpcjoin::core::Configuration::CACHELINES_PER_MEMORY_BUFFER) * TUPLES_PER_CACHELINE)
+            + inCacheCounter;
 
     if (remainingTupleInMemory > 0) {
-      hpcjoin::data::CompressedTuple *inMemoryBufferOfPartition = reinterpret_cast<hpcjoin::data::CompressedTuple *>(
-          PARTITION_ACCESS(p) + (memoryCounter /
-              hpcjoin::core::Configuration::CACHELINES_PER_MEMORY_BUFFER) *
-              hpcjoin::core::Configuration::MEMORY_BUFFER_SIZE_BYTES);
+      auto *inMemoryBufferOfPartition = reinterpret_cast<hpcjoin::data::CompressedTuple *>(PARTITION_ACCESS(p)
+          + (memoryCounter / hpcjoin::core::Configuration::CACHELINES_PER_MEMORY_BUFFER)
+              * hpcjoin::core::Configuration::MEMORY_BUFFER_SIZE_BYTES);
       window->write(p, inMemoryBufferOfPartition, remainingTupleInMemory, false);
     }
 

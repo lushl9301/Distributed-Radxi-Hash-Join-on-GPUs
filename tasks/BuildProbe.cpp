@@ -30,7 +30,7 @@ namespace hpcjoin {
 namespace tasks {
 
 BuildProbe::BuildProbe(uint64_t innerPartitionSize, hpcjoin::data::CompressedTuple *innerPartition,
-					   uint64_t outerPartitionSize, hpcjoin::data::CompressedTuple *outerPartition) {
+                       uint64_t outerPartitionSize, hpcjoin::data::CompressedTuple *outerPartition) {
 
   this->innerPartitionSize = innerPartitionSize;
   this->innerPartition = innerPartition;
@@ -50,11 +50,10 @@ void BuildProbe::execute() {
   hpcjoin::performance::Measurements::startBuildProbeTask();
 #endif
 
-  JOIN_DEBUG("Build-Probe", "Executing build-probe phase of size %lu x %lu", innerPartitionSize,
-			 outerPartitionSize);
+  JOIN_DEBUG("Build-Probe", "Executing build-probe phase of size %lu x %lu", innerPartitionSize, outerPartitionSize);
 
-  uint32_t const keyShift = hpcjoin::core::Configuration::NETWORK_PARTITIONING_FANOUT +
-	  hpcjoin::core::Configuration::PAYLOAD_BITS;
+  uint32_t const
+      keyShift = hpcjoin::core::Configuration::NETWORK_PARTITIONING_FANOUT + hpcjoin::core::Configuration::PAYLOAD_BITS;
   uint32_t const shiftBits = keyShift + hpcjoin::core::Configuration::LOCAL_PARTITIONING_FANOUT;
 
   uint64_t N = this->innerPartitionSize;
@@ -65,8 +64,8 @@ void BuildProbe::execute() {
   hpcjoin::performance::Measurements::startBuildProbeMemoryAllocation();
 #endif
 
-  uint64_t *hashTableNext = (uint64_t *) calloc(this->innerPartitionSize, sizeof(uint64_t));
-  uint64_t *hashTableBucket = (uint64_t *) calloc(N, sizeof(uint64_t));
+  auto *hashTableNext = (uint64_t *) calloc(this->innerPartitionSize, sizeof(uint64_t));
+  auto *hashTableBucket = (uint64_t *) calloc(N, sizeof(uint64_t));
 
 #ifdef MEASUREMENT_DETAILS_LOCALBP
   hpcjoin::performance::Measurements::stopBuildProbeMemoryAllocation(this->innerPartitionSize);
@@ -80,9 +79,9 @@ void BuildProbe::execute() {
 #endif
 
   for (uint64_t t = 0; t < this->innerPartitionSize;) {
-	uint64_t idx = HASH_BIT_MODULO(innerPartition[t].value, MASK, shiftBits);
-	hashTableNext[t] = hashTableBucket[idx];
-	hashTableBucket[idx] = ++t;
+    uint64_t idx = HASH_BIT_MODULO(innerPartition[t].value, MASK, shiftBits);
+    hashTableNext[t] = hashTableBucket[idx];
+    hashTableBucket[idx] = ++t;
   }
 
 #ifdef MEASUREMENT_DETAILS_LOCALBP
@@ -97,13 +96,13 @@ void BuildProbe::execute() {
 
   uint64_t matches = 0;
   for (uint64_t t = 0; t < this->outerPartitionSize; ++t) {
-	uint64_t idx = HASH_BIT_MODULO(outerPartition[t].value, MASK, shiftBits);
-	for (uint64_t hit = hashTableBucket[idx]; hit > 0; hit = hashTableNext[hit - 1]) {
-	  if ((outerPartition[t].value >> keyShift) ==
-		  (innerPartition[hit - 1].value >> keyShift)) {
-		++matches;
-	  }
-	}
+    uint64_t idx = HASH_BIT_MODULO(outerPartition[t].value, MASK, shiftBits);
+    for (uint64_t hit = hashTableBucket[idx]; hit > 0; hit = hashTableNext[hit - 1]) {
+      if ((outerPartition[t].value >> keyShift) ==
+          (innerPartition[hit - 1].value >> keyShift)) {
+        ++matches;
+      }
+    }
   }
 
 #ifdef MEASUREMENT_DETAILS_LOCALBP
