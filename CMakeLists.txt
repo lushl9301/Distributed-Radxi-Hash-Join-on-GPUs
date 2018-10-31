@@ -21,7 +21,13 @@ add_subdirectory(operators)
 add_subdirectory(performance)
 add_subdirectory(tasks)
 add_subdirectory(utils)
+
 add_executable(program main.cpp)
+
+find_library(gpu_gpuprobe
+             ${CMAKE_SOURCE_DIR}/task/gpu/kernels/)
+
+
 target_link_libraries(program
                       hj_core
                       hj_utils
