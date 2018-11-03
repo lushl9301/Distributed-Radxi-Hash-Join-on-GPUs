@@ -1,3 +1,4 @@
+add_subdirectory(gpu)
 add_library(hj_utils ../empty.cpp)
 
 add_library(hj_utils_debug ../empty.cpp Debug.h)

@@ -1,0 +1,1 @@
+void check_cuda_error(char *, int);

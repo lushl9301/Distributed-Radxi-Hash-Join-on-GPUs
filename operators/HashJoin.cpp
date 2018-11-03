@@ -19,6 +19,7 @@
 #include "../memory/Pool.h"
 #include "../data/CompressedTuple.h"
 #include "../data/Relation.h"
+#include "../tasks/gpu/GPUWrapper.hpp"
 
 namespace hpcjoin {
 namespace operators {
@@ -144,10 +145,14 @@ void HashJoin::join() {
                                                               outerRelationPartitionSize,
                                                               outerRelationPartition));
       } else {
-        TASK_QUEUE.push(new hpcjoin::tasks::BuildProbe(innerRelationPartitionSize,
-                                                       innerRelationPartition,
-                                                       outerRelationPartitionSize,
-                                                       outerRelationPartition));
+//        TASK_QUEUE.push(new hpcjoin::tasks::BuildProbe(innerRelationPartitionSize,
+//                                                       innerRelationPartition,
+//                                                       outerRelationPartitionSize,
+//                                                       outerRelationPartition));
+        TASK_QUEUE.push(new gpu::GPUWrapper(innerRelationPartitionSize,
+                                            innerRelationPartition,
+                                            outerRelationPartitionSize,
+                                            outerRelationPartition));
       }
     }
   }
