@@ -142,3 +142,17 @@ __global__ void reorder_L2(data *, data *, int, int, int *, int *, data *, data 
 __global__ void probe(data *, data *, data *, data *, int *, int *, int, int *, data *, int);
 }
 }
+namespace SD {
+namespace eth {
+
+__global__ void probe_kernel_compressed(data *rHashTable,
+                                        data *sID,
+                                        int rTupleNum,
+                                        int sTupleNum,
+                                        int rHashTableBucketNum,
+                                        int *globalPtr,
+                                        uint32_t shiftBits,
+                                        uint32_t keyShift);
+
+}
+}

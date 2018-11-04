@@ -1782,8 +1782,7 @@ int simple_hash_join(relation_t *hRelR, relation_t *hRelS, args_t *args, cudaPar
 
   cudaDeviceSynchronize();
 
-  build_kernel << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >>
-      > (relR->id, relR->key, relRn->id, relR->numTuples, args->pCount);
+  build_kernel << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >> > (relR->id, relR->key, relRn->id, relR->numTuples, args->pCount);
 
   //copying Key of relation R to GPU for building the histogram
   cudaMemcpyAsync(relS->key, hRelS->key, relS->numTuples * sizeof(data), cudaMemcpyHostToDevice, cudaParam->streams[1]);
@@ -1807,75 +1806,6 @@ int simple_hash_join(relation_t *hRelR, relation_t *hRelS, args_t *args, cudaPar
 
   //ending time measurement
   cudaEventRecord(cudaParam->stop, cudaParam->streams[1]);
-
-  //making sure all CUDA processes are completed before ending the time measurement
-  cudaDeviceSynchronize();
-
-  //measuring time
-  cudaEventElapsedTime(&cudaParam->time, cudaParam->start, cudaParam->stop);
-
-  check_cuda_error((char *) __FILE__, __LINE__);
-
-  std::cout << "Simple Hash Join Time Probe Stage: " << cudaParam->time << " ms" << std::endl;
-
-  //displayGPUBuffer(out[0], args->hOut[0], 100);
-
-  return 0;
-}
-
-int simple_hash_join_UVA(relation_t *hRelR, relation_t *hRelS, args_t *args, cudaParameters_t *cudaParam) {
-
-  relation_t *relR = (relation_t *) malloc(sizeof(relation_t)); //Device side array for relation R
-  relation_t *relS = (relation_t *) malloc(sizeof(relation_t));; //Device side array for relation S
-
-  relation_t *relRn = (relation_t *) malloc(sizeof(relation_t)); //Device side array for partitioned relation R
-  relation_t *relSn = (relation_t *) malloc(sizeof(relation_t));; //Device side array for partitioned relation S
-
-  relR->numTuples = hRelR->numTuples;
-  relS->numTuples = hRelS->numTuples;
-
-  data *out[2]; //GPU side output buffer
-  int *globalPtr[2]; //The global pointer that is used to get the index of the output tuples.
-
-  //allocating memory for output buffer
-  cudaMalloc((void **) &out[0], 2 * relS->numTuples * sizeof(data));
-  cudaMalloc((void **) &out[1], 2 * relS->numTuples * sizeof(data));
-
-  //allocating memory for the global pointer
-  cudaMalloc((void **) &globalPtr[0], sizeof(data));
-  cudaMalloc((void **) &globalPtr[1], sizeof(data));
-
-  //allocating device memory for storing partitioned data
-  relRn->numTuples = relR->numTuples;
-  relSn->numTuples = relS->numTuples;
-
-  cudaMalloc((void **) &relRn->id, 2 * (relRn->numTuples + 2 * args->pCount) * sizeof(data));
-
-  //setting the global pointer to 0
-  cudaMemset(globalPtr[0], 0, sizeof(int));
-  cudaMemset(globalPtr[1], 0, sizeof(int));
-
-  //initializing all histogram entries to 0
-  cudaMemset(relRn->id, 0, 2 * (relRn->numTuples + 2 * args->pCount) * sizeof(data));
-
-  //makign sure all cuda instruction before this point are completed before starting the time measurement
-  cudaDeviceSynchronize();
-
-  //starting time measurement
-  cudaEventRecord(cudaParam->start, cudaParam->streams[0]);
-
-  build_kernel << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >>
-      > (hRelR->id, hRelR->key, relRn->id, relR->numTuples, args->pCount);
-
-  cudaDeviceSynchronize();
-
-  probe_kernel_sm << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >>
-      > (relRn->id, hRelS->id, hRelS->key, args->hOut[0], relR->numTuples, relS->numTuples, args->pCount, globalPtr[0]);
-
-  cudaDeviceSynchronize();
-
-  //ending time measurement
-  cudaEventRecord(cudaParam->stop, cudaParam->streams[0]);
 
   //making sure all CUDA processes are completed before ending the time measurement
   cudaDeviceSynchronize();
@@ -1946,8 +1876,7 @@ int simple_hash_join_GM(relation_t *hRelR, relation_t *hRelS, args_t *args, cuda
 
   cudaDeviceSynchronize();
 
-  build_kernel << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >>
-      > (relR->id, relR->key, relRn->id, relR->numTuples, args->pCount);
+  build_kernel << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >> > (relR->id, relR->key, relRn->id, relR->numTuples, args->pCount);
 
   //copying Key of relation R to GPU for building the histogram
   cudaMemcpyAsync(relS->key, hRelS->key, relS->numTuples * sizeof(data), cudaMemcpyHostToDevice, cudaParam->streams[1]);
@@ -2041,8 +1970,7 @@ int simple_hash_join_SD(relation_t *hRelR, relation_t *hRelS, args_t *args, cuda
 
   cudaDeviceSynchronize();
 
-  build_kernel << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >>
-      > (relR->id, relR->key, relRn->id, relR->numTuples, args->pCount);
+  build_kernel << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >> > (relR->id, relR->key, relRn->id, relR->numTuples, args->pCount);
 
   //copying Key of relation R to GPU for building the histogram
   cudaMemcpyAsync(relS->key, hRelS->key, relS->numTuples * sizeof(data), cudaMemcpyHostToDevice, cudaParam->streams[0]);
@@ -2134,8 +2062,7 @@ int simple_hash_join_SD_PT(relation_t *hRelR, relation_t *hRelS, args_t *args, c
   //starting time measurement
   cudaEventRecord(cudaParam->start, cudaParam->streams[0]);
 
-  build_kernel << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >>
-      > (relR->id, relR->key, relRn->id, relR->numTuples, args->pCount);
+  build_kernel << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >>> (relR->id, relR->key, relRn->id, relR->numTuples, args->pCount);
 
   //ending time measurement
   cudaEventRecord(cudaParam->stop, cudaParam->streams[0]);
@@ -2158,5 +2085,128 @@ int simple_hash_join_SD_PT(relation_t *hRelR, relation_t *hRelS, args_t *args, c
 
   return 0;
 }
+}
+
+namespace eth {
+
+__global__ void build_kernel_compressed(data *rTableID,
+                                        data *rHashTable,
+                                        int rTupleNum,
+                                        int rHashTableBucketNum,
+                                        uint32_t shiftBits) {
+  int numWorkItems = gridDim.x * blockDim.x;
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+  int key, hash, count;
+  int hashBucketSize = rTupleNum / rHashTableBucketNum; //number of tuples inserted into each bucket
+
+  while (tid < rTupleNum) {
+    //phase 1
+    key = rTableID[tid]; //get the key of one tuple
+    hash = key >> shiftBits % rHashTableBucketNum;
+
+    //phase 2
+    if ((count = atomicAdd(&rHashTable[hash * hashBucketSize], 1)) < hashBucketSize) {
+      rHashTable[hash * hashBucketSize + count] = key;
+    }
+
+    tid += numWorkItems;
+  }
+}
+
+int simple_hash_join_compressed(relation_t *hRelR,
+                                relation_t *hRelS,
+                                args_t *args,
+                                uint32_t shiftBits,
+                                uint32_t keyShift) {
+  cudaParameters_t * cudaParam = (cudaParameters_t *) malloc(sizeof(cudaParameters_t));
+
+  relation_t *relR = (relation_t *) malloc(sizeof(relation_t)); //Device side array for relation R
+  relation_t *relS = (relation_t *) malloc(sizeof(relation_t));; //Device side array for relation S
+
+  relation_t *relRn = (relation_t *) malloc(sizeof(relation_t)); //Device side array for partitioned relation R
+  relation_t *relSn = (relation_t *) malloc(sizeof(relation_t));; //Device side array for partitioned relation S
+
+  relR->numTuples = hRelR->numTuples;
+  relS->numTuples = hRelS->numTuples;
+
+  data *out[2]; //GPU side output buffer
+  int *globalPtr[2]; //The global pointer that is used to get the index of the output tuples.
+
+  //allocating memory for output buffer
+  cudaMalloc((void **) &out[0], 2 * relS->numTuples * sizeof(data));
+  cudaMalloc((void **) &out[1], 2 * relS->numTuples * sizeof(data));
+
+  //allocating memory for the global pointer
+  cudaMalloc((void **) &globalPtr[0], sizeof(data));
+  cudaMalloc((void **) &globalPtr[1], sizeof(data));
+
+  //allocating device memory for storing input data
+  cudaMalloc((void **) &relR->id, relR->numTuples * sizeof(data));
+  cudaMalloc((void **) &relS->id, relS->numTuples * sizeof(data));
+
+  //allocating device memory for storing partitioned data
+  relRn->numTuples = relR->numTuples;
+  relSn->numTuples = relS->numTuples;
+
+  cudaMalloc((void **) &relRn->id, 2 * (relRn->numTuples + 2 * args->pCount) * sizeof(data));
+
+  //setting the global pointer to 0
+  cudaMemset(globalPtr[0], 0, sizeof(int));
+  cudaMemset(globalPtr[1], 0, sizeof(int));
+
+  //initializing all histogram entries to 0
+  cudaMemset(relRn->id, 0, 2 * (relRn->numTuples + 2 * args->pCount) * sizeof(data));
+
+  //makign sure all cuda instruction before this point are completed before starting the time measurement
+  cudaDeviceSynchronize();
+
+  //starting time measurement
+  cudaEventRecord(cudaParam->start, cudaParam->streams[0]);
+
+  cudaMemcpyAsync(relR->id, hRelR->id, relR->numTuples * sizeof(data), cudaMemcpyHostToDevice, cudaParam->streams[0]);
+
+  cudaDeviceSynchronize();
+
+  build_kernel_compressed << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >> >
+      (relR->id, relRn->id, relR->numTuples, args->pCount, shiftBits);
+
+  cudaMemcpyAsync(relS->id, hRelS->id, relS->numTuples * sizeof(data), cudaMemcpyHostToDevice, cudaParam->streams[0]);
+
+  cudaDeviceSynchronize();
+
+  probe_kernel_compressed << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >> >
+      (relRn->id,
+          relS->id,
+          relR->numTuples,
+          relS->numTuples,
+          args->pCount, globalPtr[0], shiftBits, keyShift);
+
+  cudaMemcpyAsync(args->hOut[0],
+                  out[0],
+                  2 * relS->numTuples * sizeof(data),
+                  cudaMemcpyDeviceToHost,
+                  cudaParam->streams[0]);
+
+  cudaDeviceSynchronize();
+
+  //ending time measurement
+  cudaEventRecord(cudaParam->stop, cudaParam->streams[0]);
+
+  //making sure all CUDA processes are completed before ending the time measurement
+  cudaDeviceSynchronize();
+
+  //measuring time
+  cudaEventElapsedTime(&cudaParam->time, cudaParam->start, cudaParam->stop);
+
+  check_cuda_error((char *) __FILE__, __LINE__);
+
+  std::cout << "Simple Hash Join Time Probe Stage: " << cudaParam->time << " ms" << std::endl;
+
+  //displayGPUBuffer(out[0], args->hOut[0], 100);
+
+  return 0;
+}
+
 }
 }

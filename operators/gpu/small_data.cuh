@@ -1,5 +1,6 @@
 #include "../../data/data.hpp"
 #include "../../utils/gpu/cuda_parameters.hpp"
+#include "kernels.cuh"
 
 namespace SD {
 
@@ -53,10 +54,24 @@ int UVA_benchmark1(data *, data *, int, cudaParameters_t *);
 int UVA_benchmark2(data *, data *, int, cudaParameters_t *);
 
 int simple_hash_join(relation_t *, relation_t *, args_t *, cudaParameters_t *);
-int simple_hash_join_UVA(relation_t *, relation_t *, args_t *, cudaParameters_t *);
 int simple_hash_join_GM(relation_t *, relation_t *, args_t *, cudaParameters_t *);
 int simple_hash_join_SD(relation_t *, relation_t *, args_t *, cudaParameters_t *);
 int simple_hash_join_SD_PT(relation_t *, relation_t *, args_t *, cudaParameters_t *);
+
+}
+
+namespace eth {
+
+__global__ void build_kernel_compressed(data *rTableTuple,
+                                        data *rHashTable,
+                                        int rTupleNum,
+                                        int rHashTableBucketNum,
+                                        uint32_t shiftBits);
+int simple_hash_join_compressed(relation_t *hRelR,
+                                relation_t *hRelS,
+                                args_t *args,
+                                uint32_t shiftBits,
+                                uint32_t keyShift);
 
 }
 }

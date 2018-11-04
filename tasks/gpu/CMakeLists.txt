@@ -1,4 +1,5 @@
-add_library(gpu_wrapper GPUWrapper.cpp GPUWrapper.hpp)
+CUDA_ADD_LIBRARY(gpu_wrapper GPUWrapper.cu GPUWrapper.hpp)
 
 target_link_libraries(gpu_wrapper
-                      gpu_operators)
+                      gpu_operators
+                      gpu_small)

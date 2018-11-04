@@ -44,7 +44,7 @@
 	#endif
 
 	//to allow easy data type change
-	typedef int data;
+	typedef unsigned long long data;
 
 	struct Record {
 		data key;
