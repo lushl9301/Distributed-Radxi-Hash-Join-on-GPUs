@@ -2120,6 +2120,11 @@ int simple_hash_join_compressed(relation_t *hRelR,
                                 uint32_t shiftBits,
                                 uint32_t keyShift) {
   cudaParameters_t * cudaParam = (cudaParameters_t *) malloc(sizeof(cudaParameters_t));
+  cudaParam->gridSize = 100;
+  cudaParam->blockSize = 512;
+  cudaEventCreate(&cudaParam->start);
+  cudaEventCreate(&cudaParam->stop);
+
 
   relation_t *relR = (relation_t *) malloc(sizeof(relation_t)); //Device side array for relation R
   relation_t *relS = (relation_t *) malloc(sizeof(relation_t));; //Device side array for relation S
@@ -2150,6 +2155,8 @@ int simple_hash_join_compressed(relation_t *hRelR,
   relSn->numTuples = relS->numTuples;
 
   cudaMalloc((void **) &relRn->id, 2 * (relRn->numTuples + 2 * args->pCount) * sizeof(data));
+  cudaError_t error = cudaGetLastError();
+  std::cout << cudaGetErrorString(error) << std::endl;
 
   //setting the global pointer to 0
   cudaMemset(globalPtr[0], 0, sizeof(int));
@@ -2170,6 +2177,9 @@ int simple_hash_join_compressed(relation_t *hRelR,
 
   build_kernel_compressed << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >> >
       (relR->id, relRn->id, relR->numTuples, args->pCount, shiftBits);
+
+  error = cudaGetLastError();
+  std::cout << cudaGetErrorString(error) << std::endl;
 
   cudaMemcpyAsync(relS->id, hRelS->id, relS->numTuples * sizeof(data), cudaMemcpyHostToDevice, cudaParam->streams[0]);
 
