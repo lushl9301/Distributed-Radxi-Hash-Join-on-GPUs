@@ -211,6 +211,12 @@ int simple_hash_join_eth(hpcjoin::data::CompressedTuple *hRelR,
   std::cout << "Simple Hash Join Time: " << cudaParam->time << " ms" << std::endl;
 
   //displayGPUBuffer(out[0], args->hOut[0], 100);
+  cudaFree(relR);
+  cudaFree(relRn);
+  cudaFree(relS);
+  cudaFree(relSn);
+  cudaFree(globalPtr);
+  cudaFree(out);
 
   return 0;
 }
@@ -348,7 +354,12 @@ int simple_hash_join_sm(hpcjoin::data::CompressedTuple *hRelR,
   std::cout << "Simple Hash Join Time: " << cudaParam->time << " ms" << std::endl;
 
   //displayGPUBuffer(out[0], args->hOut[0], 100);
-
+  cudaFree(relR);
+  cudaFree(relRn);
+  cudaFree(relS);
+  cudaFree(relSn);
+  cudaFree(globalPtr);
+  cudaFree(out);
   return 0;
 }
 }
