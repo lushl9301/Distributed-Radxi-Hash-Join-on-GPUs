@@ -145,15 +145,18 @@ void HashJoin::join() {
                                                               outerRelationPartitionSize,
                                                               outerRelationPartition));
       } else {
-//        TASK_QUEUE.push(new hpcjoin::tasks::BuildProbe(innerRelationPartitionSize,
-//                                                       innerRelationPartition,
-//                                                       outerRelationPartitionSize,
-//                                                       outerRelationPartition));
+#ifdef ETH
+        TASK_QUEUE.push(new hpcjoin::tasks::BuildProbe(innerRelationPartitionSize,
+                                                       innerRelationPartition,
+                                                       outerRelationPartitionSize,
+                                                       outerRelationPartition));
+#else
         TASK_QUEUE.push(new gpu::GPUWrapper(this->nodeId,
                                             innerRelationPartitionSize,
                                             innerRelationPartition,
                                             outerRelationPartitionSize,
                                             outerRelationPartition));
+#endif
       }
     }
   }

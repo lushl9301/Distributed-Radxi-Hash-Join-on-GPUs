@@ -12,7 +12,7 @@ set(MPI_CXX_FLAGS "-O3 -std=c++11 -mavx -lpthread -lpapi -D MEASUREMENT_DETAILS_
 include_directories("/usr/local/include")
 #add_definitions("-D JOIN_DEBUG_PRINT")
 #add_definitions("-D JOIN_DEBUG_PRINT -D JOIN_MEM_PRINT")
-
+#add_definitions("-D ETH")
 add_subdirectory(core)
 add_subdirectory(data)
 add_subdirectory(histograms)

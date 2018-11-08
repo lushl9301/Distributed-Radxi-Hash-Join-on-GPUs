@@ -8,6 +8,17 @@
 #include "thrust/execution_policy.h"
 #include "thrust/scan.h"
 
+#define NEXT_POW_2(V)                           \
+    do {                                        \
+        V--;                                    \
+        V |= V >> 1;                            \
+        V |= V >> 2;                            \
+        V |= V >> 4;                            \
+        V |= V >> 8;                            \
+        V |= V >> 16;                           \
+        V++;                                    \
+    } while(0)
+
 namespace SD {
 
 namespace eth {
@@ -108,6 +119,146 @@ int simple_hash_join_eth(hpcjoin::data::CompressedTuple *hRelR,
                          uint32_t keyShift) {
   args->pCount = 16;
   cudaParameters_t *cudaParam = (cudaParameters_t *) malloc(sizeof(cudaParameters_t));
+  cudaParam->gridSize = 1;
+  cudaParam->blockSize = 1024;
+  cudaEventCreate(&cudaParam->start);
+  cudaEventCreate(&cudaParam->stop);
+
+  hpcjoin::data::CompressedTuple *relR =
+      (hpcjoin::data::CompressedTuple *) malloc(sizeof(hpcjoin::data::CompressedTuple)); //Device side array for relation R
+  hpcjoin::data::CompressedTuple *relS =
+      (hpcjoin::data::CompressedTuple *) malloc(sizeof(hpcjoin::data::CompressedTuple));; //Device side array for relation S
+
+  hpcjoin::data::CompressedTuple *relRn =
+      (hpcjoin::data::CompressedTuple *) malloc(sizeof(hpcjoin::data::CompressedTuple)); //Device side array for partitioned relation R
+  hpcjoin::data::CompressedTuple *relSn =
+      (hpcjoin::data::CompressedTuple *) malloc(sizeof(hpcjoin::data::CompressedTuple));; //Device side array for partitioned relation S
+
+  hpcjoin::data::CompressedTuple *out[2]; //GPU side output buffer
+  int *globalPtr[2]; //The global pointer that is used to get the index of the output tuples.
+
+  //allocating memory for output buffer
+  cudaMalloc((void **) &out[0], 2 * stuples * sizeof(hpcjoin::data::CompressedTuple));
+  cudaMalloc((void **) &out[1], 2 * stuples * sizeof(hpcjoin::data::CompressedTuple));
+
+  //allocating memory for the global pointer
+  cudaMalloc((void **) &globalPtr[0], sizeof(hpcjoin::data::CompressedTuple));
+  cudaMalloc((void **) &globalPtr[1], sizeof(hpcjoin::data::CompressedTuple));
+
+  //allocating device memory for storing input hpcjoin::data::CompressedTuple
+  cudaMalloc((void **) &relR, rtuples * sizeof(hpcjoin::data::CompressedTuple));
+  cudaMalloc((void **) &relS, stuples * sizeof(hpcjoin::data::CompressedTuple));
+
+  cudaMalloc((void **) &relRn, 2 * (rtuples + 2 * args->pCount) * sizeof(hpcjoin::data::CompressedTuple));
+//  cudaError_t error = cudaGetLastError();
+//  std::cout << cudaGetErrorString(error) << std::endl;
+
+  //setting the global pointer to 0
+  cudaMemset(globalPtr[0], 0, sizeof(int));
+  cudaMemset(globalPtr[1], 0, sizeof(int));
+
+  //initializing all histogram entries to 0
+  cudaMemset(relRn, 0, 2 * (rtuples + 2 * args->pCount) * sizeof(hpcjoin::data::CompressedTuple));
+
+  //makign sure all cuda instruction before this point are completed before starting the time measurement
+  cudaDeviceSynchronize();
+
+  //starting time measurement
+  cudaEventRecord(cudaParam->start, cudaParam->streams[0]);
+
+  cudaMemcpyAsync(relR,
+                  hRelR,
+                  rtuples * sizeof(hpcjoin::data::CompressedTuple),
+                  cudaMemcpyHostToDevice,
+                  cudaParam->streams[0]);
+
+  build_kernel_eth << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >> >
+      (relR, relRn, rtuples, args->pCount, shiftBits);
+
+  cudaMemcpyAsync(relS,
+                  hRelS,
+                  stuples * sizeof(hpcjoin::data::CompressedTuple),
+                  cudaMemcpyHostToDevice,
+                  cudaParam->streams[0]);
+
+  probe_kernel_eth << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >> >
+      (relRn,
+          relS,
+          rtuples,
+          stuples,
+          args->pCount, globalPtr[0], shiftBits, keyShift);
+
+//  cudaMemcpyAsync(args->hOut[0],
+//                  out[0],
+//                  2 * stuples * sizeof(hpcjoin::data::CompressedTuple),
+//                  cudaMemcpyDeviceToHost,
+//                  cudaParam->streams[0]);
+
+  cudaDeviceSynchronize();
+//  check_cuda_error((char *) __FILE__, __LINE__);
+
+  //ending time measurement
+  cudaEventRecord(cudaParam->stop, cudaParam->streams[0]);
+
+  //making sure all CUDA processes are completed before ending the time measurement
+  cudaDeviceSynchronize();
+
+  //measuring time
+  cudaEventElapsedTime(&cudaParam->time, cudaParam->start, cudaParam->stop);
+
+//  check_cuda_error((char *) __FILE__, __LINE__);
+
+  std::cout << "Simple Hash Join Time: " << cudaParam->time << " ms" << std::endl;
+
+  //displayGPUBuffer(out[0], args->hOut[0], 100);
+
+  return 0;
+}
+#define HASH_BIT_MODULO(KEY, MASK, NBITS) (((KEY) & (MASK)) >> (NBITS))
+
+__global__ void build_probe_kernel_eth_sm(hpcjoin::data::CompressedTuple *rID,
+                                          hpcjoin::data::CompressedTuple *sID,
+                                          int rTupleNum,
+                                          int sTupleNum,
+                                          int *globalPtr,
+                                          uint32_t shiftBits,
+                                          uint32_t keyShift,
+                                          uint64_t N,
+                                          uint64_t MASK) {
+  int numWorkItems = gridDim.x * blockDim.x;
+  uint tid = blockIdx.x * blockDim.x + threadIdx.x;
+  extern __shared__ uint64_t sm[];
+  uint64_t * hashTableBucket = sm;
+  uint64_t * hashTableNext = sm + sizeof(uint64_t) * N;
+  while (tid < rTupleNum) {
+    uint64_t idx = HASH_BIT_MODULO(rID[tid].value, MASK, shiftBits);
+    hashTableNext[tid] = hashTableBucket[idx];
+    hashTableBucket[idx] = ++tid;
+    tid += numWorkItems;
+  }
+  __syncthreads();
+  tid = blockIdx.x * blockDim.x + threadIdx.x;
+  while (tid < sTupleNum) {
+    uint64_t idx = HASH_BIT_MODULO(sID[tid].value, MASK, shiftBits);
+    for (uint64_t hit = hashTableBucket[idx]; hit > 0; hit = hashTableNext[hit - 1]) {
+      if ((sID[tid].value >> keyShift) ==
+          (rID[hit - 1].value >> keyShift)) {
+        atomicAdd(globalPtr, 1);
+      }
+    }
+    tid += numWorkItems;
+  }
+}
+
+int simple_hash_join_sm(hpcjoin::data::CompressedTuple *hRelR,
+                        hpcjoin::data::CompressedTuple *hRelS,
+                        uint64_t rtuples,
+                        uint64_t stuples,
+                        args_t *args,
+                        uint32_t shiftBits,
+                        uint32_t keyShift) {
+  args->pCount = 16;
+  cudaParameters_t *cudaParam = (cudaParameters_t *) malloc(sizeof(cudaParameters_t));
   cudaParam->gridSize = 112;
   cudaParam->blockSize = 512;
   cudaEventCreate(&cudaParam->start);
@@ -154,21 +305,25 @@ int simple_hash_join_eth(hpcjoin::data::CompressedTuple *hRelR,
 
   //starting time measurement
   cudaEventRecord(cudaParam->start, cudaParam->streams[0]);
+  uint64_t N = rtuples;
+  NEXT_POW_2(N);
+  uint64_t const MASK = (N - 1) << (shiftBits);
+  uint64_t size_sm = (N + rtuples) * sizeof(uint64_t);
 
-  cudaMemcpyAsync(relR, hRelR, rtuples * sizeof(hpcjoin::data::CompressedTuple), cudaMemcpyHostToDevice, cudaParam->streams[0]);
+  cudaMemcpyAsync(relR,
+                  hRelR,
+                  rtuples * sizeof(hpcjoin::data::CompressedTuple),
+                  cudaMemcpyHostToDevice,
+                  cudaParam->streams[0]);
 
-  build_kernel_eth << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >> >
-      (relR, relRn, rtuples, args->pCount, shiftBits);
+  cudaMemcpyAsync(relS,
+                  hRelS,
+                  stuples * sizeof(hpcjoin::data::CompressedTuple),
+                  cudaMemcpyHostToDevice,
+                  cudaParam->streams[0]);
 
-  cudaMemcpyAsync(relS, hRelS, stuples * sizeof(hpcjoin::data::CompressedTuple), cudaMemcpyHostToDevice, cudaParam->streams[0]);
-
-
-  probe_kernel_eth << < cudaParam->gridSize, cudaParam->blockSize, 0, cudaParam->streams[0] >> >
-      (relRn,
-          relS,
-          rtuples,
-          stuples,
-          args->pCount, globalPtr[0], shiftBits, keyShift);
+  build_probe_kernel_eth_sm << < cudaParam->gridSize, cudaParam->blockSize, size_sm, cudaParam->streams[0] >> >
+      (relR, relS, rtuples, stuples, globalPtr[0], shiftBits, keyShift, N, MASK);
 
 //  cudaMemcpyAsync(args->hOut[0],
 //                  out[0],
@@ -196,6 +351,5 @@ int simple_hash_join_eth(hpcjoin::data::CompressedTuple *hRelR,
 
   return 0;
 }
-
 }
 }

@@ -6,7 +6,7 @@
 
 //maximum number of cuda streams
 #ifndef STREAM_COUNT
-	#define STREAM_COUNT 256
+	#define STREAM_COUNT 2
 #endif
 
 //maximum number of threads inside a block
