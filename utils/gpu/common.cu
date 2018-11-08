@@ -10,7 +10,7 @@ void check_cuda_error(char *file, int line) {
   cudaError_t error = cudaGetLastError();
 
   if (error != cudaSuccess) {
-    printf("%s in %s at line %d", cudaGetErrorString(error), file, line);
+    printf("%s in %s at line %d\n", cudaGetErrorString(error), file, line);
     exit(-1);
   }
 }

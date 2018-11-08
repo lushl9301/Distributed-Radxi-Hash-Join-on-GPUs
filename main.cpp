@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
 
   JOIN_MEM_DEBUG("Init Completed");
 
-  uint64_t globalInnerRelationSize = ((uint64_t) numberOfNodes) * 200000;
-  uint64_t globalOuterRelationSize = ((uint64_t) numberOfNodes) * 200000;
+  uint64_t globalInnerRelationSize = ((uint64_t) numberOfNodes) * 200000000;
+  uint64_t globalOuterRelationSize = ((uint64_t) numberOfNodes) * 200000000;
 
   uint64_t localInnerRelationSize =
 	  (nodeId < numberOfNodes - 1) ? (globalInnerRelationSize / numberOfNodes) : (globalInnerRelationSize

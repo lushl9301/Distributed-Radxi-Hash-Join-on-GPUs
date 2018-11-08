@@ -27,8 +27,8 @@ class Configuration {
 
   static const bool ENABLE_TWO_LEVEL_PARTITIONING = false;
 
-  static const uint64_t NETWORK_PARTITIONING_FANOUT = 10;
-  static const uint64_t LOCAL_PARTITIONING_FANOUT = 10;
+  static const uint64_t NETWORK_PARTITIONING_FANOUT = 1;
+  static const uint64_t LOCAL_PARTITIONING_FANOUT = 1;
 
   static const uint64_t NETWORK_PARTITIONING_COUNT = (1 << NETWORK_PARTITIONING_FANOUT);
   static const uint64_t LOCAL_PARTITIONING_COUNT = (1 << LOCAL_PARTITIONING_FANOUT);

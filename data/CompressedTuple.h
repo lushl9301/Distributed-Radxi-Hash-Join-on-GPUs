@@ -15,7 +15,7 @@ class CompressedTuple {
 
  public:
 
-  uint64_t value;
+  unsigned long long value;
 
 };
 

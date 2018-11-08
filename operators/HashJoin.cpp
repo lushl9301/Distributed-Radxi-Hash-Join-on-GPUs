@@ -149,7 +149,8 @@ void HashJoin::join() {
 //                                                       innerRelationPartition,
 //                                                       outerRelationPartitionSize,
 //                                                       outerRelationPartition));
-        TASK_QUEUE.push(new gpu::GPUWrapper(innerRelationPartitionSize,
+        TASK_QUEUE.push(new gpu::GPUWrapper(this->nodeId,
+                                            innerRelationPartitionSize,
                                             innerRelationPartition,
                                             outerRelationPartitionSize,
                                             outerRelationPartition));

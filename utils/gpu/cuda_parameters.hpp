@@ -1,3 +1,6 @@
+#ifndef DATA_HPP_
+#define DATA_HPP_
+
 #include <cuda.h>
 #include <cuda_runtime.h>
 
@@ -35,3 +38,5 @@ struct cudaParameters_t{
 };
 
 typedef struct cudaParameters_t cudaParameters_t;
+
+#endif
