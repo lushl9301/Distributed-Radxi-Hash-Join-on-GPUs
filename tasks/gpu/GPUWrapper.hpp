@@ -10,6 +10,7 @@ namespace gpu {
 class GPUWrapper : public hpcjoin::tasks::Task {
  public:
   GPUWrapper(int32_t id,
+             float *time,
              std::uint64_t innerPartitionSize,
              hpcjoin::data::CompressedTuple *innerPartition,
              std::uint64_t outerPartitionSize,
@@ -23,6 +24,8 @@ class GPUWrapper : public hpcjoin::tasks::Task {
 
   // not really anything
 
+  int id;
+  float *time;
   uint64_t innerPartitionSize;
   hpcjoin::data::CompressedTuple *innerPartition;
   uint64_t outerPartitionSize;

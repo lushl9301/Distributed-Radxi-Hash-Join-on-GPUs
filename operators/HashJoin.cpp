@@ -7,6 +7,7 @@
 #include "HashJoin.h"
 
 #include <stdlib.h>
+#include <iostream>
 
 #include "../data/Window.h"
 #include "../core/Configuration.h"
@@ -124,6 +125,8 @@ void HashJoin::join() {
   /**
    * Prepare transition
    */
+  static float time = 0;
+
 
   Measurements::startLocalProcessingPreparations();
   if (hpcjoin::core::Configuration::ENABLE_TWO_LEVEL_PARTITIONING) {
@@ -152,6 +155,7 @@ void HashJoin::join() {
                                                        outerRelationPartition));
 #else
         TASK_QUEUE.push(new gpu::GPUWrapper(this->nodeId,
+                                            &time,
                                             innerRelationPartitionSize,
                                             innerRelationPartition,
                                             outerRelationPartitionSize,
@@ -198,6 +202,7 @@ void HashJoin::join() {
     delete task;
 
   }
+  std::cout << time << std::endl;
   Measurements::stopLocalProcessing();
 
   JOIN_MEM_DEBUG("Local phase completed");

@@ -29,7 +29,9 @@ int simple_hash_join_eth(hpcjoin::data::CompressedTuple *hRelR,
                          uint64_t stuples,
                          args_t *args,
                          uint32_t shiftBits,
-                         uint32_t keyShift);
+                         uint32_t keyShift,
+                         int id,
+                         float *time);
 
 }
 

@@ -6,13 +6,16 @@
 #include "../../operators/gpu/eth.cuh"
 
 namespace gpu {
-
 GPUWrapper::GPUWrapper(int32_t id,
+                       float *time,
                        std::uint64_t innerPartitionSize,
                        hpcjoin::data::CompressedTuple *innerPartition,
                        std::uint64_t outerPartitionSize,
                        hpcjoin::data::CompressedTuple *outerPartition) {
   //cudaSetDevice(id);
+  // cudaSetDevice(0);
+  this->id = id;
+  this->time = time;
   this->innerPartitionSize = innerPartitionSize;
   this->innerPartition = innerPartition;
 
@@ -32,9 +35,7 @@ GPUWrapper::GPUWrapper(int32_t id,
     } while(0)
 
 #define HASH_BIT_MODULO(KEY, MASK, NBITS) (((KEY) & (MASK)) >> (NBITS))
-
 void gpu::GPUWrapper::execute() {
-
   uint32_t const keyShift = hpcjoin::core::Configuration::NETWORK_PARTITIONING_FANOUT +
       hpcjoin::core::Configuration::PAYLOAD_BITS;
   uint32_t const shiftBits = keyShift + hpcjoin::core::Configuration::LOCAL_PARTITIONING_FANOUT;
@@ -55,7 +56,10 @@ void gpu::GPUWrapper::execute() {
                                 this->outerPartitionSize,
                                 args,
                                 shiftBits,
-                                keyShift);
+                                keyShift,
+                                id,
+                                time);
+
 
 }
 task_type_t GPUWrapper::getType() {

@@ -89,11 +89,11 @@ __global__ void build_kernel_eth(hpcjoin::data::CompressedTuple *rTableID,
   uint64_t key, hash;
   int count;
   int hashBucketSize = rTupleNum / rHashTableBucketNum + 2; //number of tuples inserted into each bucket
-//  if (tid == 0) {
-//    for (int i = 0; i < rTupleNum; i++) {
+  if (tid == 0) {
+    for (int i = 0; i < rTupleNum; i++) {
 //      printf("%d %ld\n", i, rTableID[i]);
-//    }
-//  }
+    }
+  }
   while (tid < rTupleNum) {
     //phase 1
     key = rTableID[tid].value; //get the key of one tuple
@@ -108,21 +108,24 @@ __global__ void build_kernel_eth(hpcjoin::data::CompressedTuple *rTableID,
   }
 }
 
-long time;
-
 int simple_hash_join_eth(hpcjoin::data::CompressedTuple *hRelR,
                          hpcjoin::data::CompressedTuple *hRelS,
                          uint64_t rtuples,
                          uint64_t stuples,
                          args_t *args,
                          uint32_t shiftBits,
-                         uint32_t keyShift) {
+                         uint32_t keyShift,
+                         int id,
+                         float *time) {
+  cudaSetDevice(id);
+  cudaDeviceReset();
+  cudaDeviceSynchronize();
+
   args->pCount = 16;
   cudaParameters_t *cudaParam = (cudaParameters_t *) malloc(sizeof(cudaParameters_t));
-  cudaParam->gridSize = 1;
-  cudaParam->blockSize = 1024;
+  cudaParam->gridSize = 160;
+  cudaParam->blockSize = 512;
   cudaEventCreate(&cudaParam->start);
-  cudaEventCreate(&cudaParam->stop);
 
   hpcjoin::data::CompressedTuple *relR =
       (hpcjoin::data::CompressedTuple *) malloc(sizeof(hpcjoin::data::CompressedTuple)); //Device side array for relation R
@@ -160,12 +163,16 @@ int simple_hash_join_eth(hpcjoin::data::CompressedTuple *hRelR,
   //initializing all histogram entries to 0
   cudaMemset(relRn, 0, 2 * (rtuples + 2 * args->pCount) * sizeof(hpcjoin::data::CompressedTuple));
 
-  //makign sure all cuda instruction before this point are completed before starting the time measurement
+  cudaEventCreate(&cudaParam->stop);
   cudaDeviceSynchronize();
+
+  cudaEventElapsedTime(&cudaParam->time, cudaParam->start, cudaParam->stop);
+//  std::cout << cudaParam->time << std::endl;
+
+  //makign sure all cuda instruction before this point are completed before starting the time measurement
 
   //starting time measurement
   cudaEventRecord(cudaParam->start, cudaParam->streams[0]);
-
   cudaMemcpyAsync(relR,
                   hRelR,
                   rtuples * sizeof(hpcjoin::data::CompressedTuple),
@@ -194,7 +201,7 @@ int simple_hash_join_eth(hpcjoin::data::CompressedTuple *hRelR,
 //                  cudaMemcpyDeviceToHost,
 //                  cudaParam->streams[0]);
 
-  cudaDeviceSynchronize();
+//  cudaDeviceSynchronize();
 //  check_cuda_error((char *) __FILE__, __LINE__);
 
   //ending time measurement
@@ -208,15 +215,16 @@ int simple_hash_join_eth(hpcjoin::data::CompressedTuple *hRelR,
 
 //  check_cuda_error((char *) __FILE__, __LINE__);
 
-  std::cout << "Simple Hash Join Time: " << cudaParam->time << " ms" << std::endl;
+  *time += cudaParam->time;
+//  std::cout << "time " << *time << std::endl;
+
 
   //displayGPUBuffer(out[0], args->hOut[0], 100);
   cudaFree(relR);
   cudaFree(relRn);
   cudaFree(relS);
-  cudaFree(relSn);
-  cudaFree(globalPtr);
-  cudaFree(out);
+//  cudaFree(globalPtr);
+//  cudaFree(out);
 
   return 0;
 }

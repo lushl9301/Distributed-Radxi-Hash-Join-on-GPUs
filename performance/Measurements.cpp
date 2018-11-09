@@ -100,7 +100,7 @@ void Measurements::stopJoin() {
   long_long value;
   int ret = 0;
   if ((ret = PAPI_stop_counters(&value, 1)) != PAPI_OK) {
-	value = 0;
+    value = 0;
   }
 
   totalCycles = value;
@@ -199,7 +199,7 @@ void Measurements::startHistogramLocalHistogramComputation() {
 void Measurements::stopHistogramLocalHistogramComputation(uint64_t numberOfElemenets) {
   gettimeofday(&histogramLocalHistogramComputationStop, NULL);
   uint64_t time = timeDiff(histogramLocalHistogramComputationStop,
-						   histogramLocalHistogramComputationStart);
+                           histogramLocalHistogramComputationStart);
 
   JOIN_ASSERT(histogramLocalHistogramComputationIdx < 2, "Performance", "Index out of bounds");
   histogramLocalHistogramComputationTimes[histogramLocalHistogramComputationIdx] = time;
@@ -214,7 +214,7 @@ void Measurements::startHistogramGlobalHistogramComputation() {
 void Measurements::stopHistogramGlobalHistogramComputation() {
   gettimeofday(&histogramGlobalHistogramComputationStop, NULL);
   uint64_t time = timeDiff(histogramGlobalHistogramComputationStop,
-						   histogramGlobalHistogramComputationStart);
+                           histogramGlobalHistogramComputationStart);
 
   JOIN_ASSERT(histogramGlobalHistogramComputationIdx < 2, "Performance", "Index out of bounds");
   histogramGlobalHistogramComputationTimes[histogramGlobalHistogramComputationIdx] = time;
@@ -245,23 +245,23 @@ void Measurements::stopHistogramOffsetComputation() {
 
 void Measurements::storeHistogramComputationData() {
   fprintf(performanceOutputFile, "HILOCAL\t%lu\tus\n",
-		  histogramLocalHistogramComputationTimes[0]);
+          histogramLocalHistogramComputationTimes[0]);
   fprintf(performanceOutputFile, "HOLOCELEM\t%lu\ttuples\n",
-		  histogramLocalHistogramComputationElements[0]);
+          histogramLocalHistogramComputationElements[0]);
   fprintf(performanceOutputFile, "HILOCRATE\t%.2f\tMbytes/sec\n",
-		  ((double) histogramLocalHistogramComputationElements[0] *
-			  sizeof(hpcjoin::data::Tuple)) / histogramLocalHistogramComputationTimes[0]);
+          ((double) histogramLocalHistogramComputationElements[0] *
+              sizeof(hpcjoin::data::Tuple)) / histogramLocalHistogramComputationTimes[0]);
   fprintf(performanceOutputFile, "HOLOCAL\t%lu\tus\n",
-		  histogramLocalHistogramComputationTimes[1]);
+          histogramLocalHistogramComputationTimes[1]);
   fprintf(performanceOutputFile, "HOLOCELEM\t%lu\ttuples\n",
-		  histogramLocalHistogramComputationElements[1]);
+          histogramLocalHistogramComputationElements[1]);
   fprintf(performanceOutputFile, "HOLOCRATE\t%.2f\tMbytes/sec\n",
-		  ((double) histogramLocalHistogramComputationElements[1] *
-			  sizeof(hpcjoin::data::Tuple)) / histogramLocalHistogramComputationTimes[1]);
+          ((double) histogramLocalHistogramComputationElements[1] *
+              sizeof(hpcjoin::data::Tuple)) / histogramLocalHistogramComputationTimes[1]);
   fprintf(performanceOutputFile, "HIGLOBAL\t%lu\tus\n",
-		  histogramGlobalHistogramComputationTimes[0]);
+          histogramGlobalHistogramComputationTimes[0]);
   fprintf(performanceOutputFile, "HOGLOBAL\t%lu\tus\n",
-		  histogramGlobalHistogramComputationTimes[1]);
+          histogramGlobalHistogramComputationTimes[1]);
   fprintf(performanceOutputFile, "HASSIGN\t%lu\tus\n", histogramAssignmentComputationTime);
   fprintf(performanceOutputFile, "HIOFFCOMP\t%lu\tus\n", histogramOffsetComputationTimes[0]);
   fprintf(performanceOutputFile, "HOOFFCOMP\t%lu\tus\n", histogramOffsetComputationTimes[1]);
@@ -291,7 +291,7 @@ void Measurements::startNetworkPartitioningMemoryAllocation() {
 void Measurements::stopNetworkPartitioningMemoryAllocation(uint64_t numberOfElemenets) {
   gettimeofday(&networkPartitioningMemoryAllocationStop, NULL);
   uint64_t time = timeDiff(networkPartitioningMemoryAllocationStop,
-						   networkPartitioningMemoryAllocationStart);
+                           networkPartitioningMemoryAllocationStart);
 
   JOIN_ASSERT(networkPartitioningMemoryAllocationIdx < 2, "Performance", "Index out of bounds");
   networkPartitioningMemoryAllocationTimes[networkPartitioningMemoryAllocationIdx] = time;
@@ -305,7 +305,7 @@ void Measurements::startNetworkPartitioningMainPartitioning() {
 void Measurements::stopNetworkPartitioningMainPartitioning(uint64_t numberOfElemenets) {
   gettimeofday(&networkPartitioningMainPartitioningStop, NULL);
   uint64_t time = timeDiff(networkPartitioningMainPartitioningStop,
-						   networkPartitioningMainPartitioningStart);
+                           networkPartitioningMainPartitioningStart);
 
   JOIN_ASSERT(networkPartitioningMainPartitioningIdx < 2, "Performance", "Index out of bounds");
   networkPartitioningMainPartitioningTimes[networkPartitioningMainPartitioningIdx] = time;
@@ -319,7 +319,7 @@ void Measurements::startNetworkPartitioningFlushPartitioning() {
 void Measurements::stopNetworkPartitioningFlushPartitioning() {
   gettimeofday(&networkPartitioningFlushPartitioningStop, NULL);
   uint64_t time = timeDiff(networkPartitioningFlushPartitioningStop,
-						   networkPartitioningFlushPartitioningStart);
+                           networkPartitioningFlushPartitioningStart);
 
   JOIN_ASSERT(networkPartitioningFlushPartitioningIdx < 2, "Performance", "Index out of bounds");
   networkPartitioningFlushPartitioningTimes[networkPartitioningFlushPartitioningIdx] = time;
@@ -350,17 +350,17 @@ void Measurements::stopNetworkPartitioningWindowWait() {
 
 void Measurements::storeNetworkPartitioningData() {
   fprintf(performanceOutputFile, "MIMEMALLOC\t%lu\tus\n",
-		  networkPartitioningMemoryAllocationTimes[0]);
+          networkPartitioningMemoryAllocationTimes[0]);
   fprintf(performanceOutputFile, "MIMAINPART\t%lu\tus\n",
-		  networkPartitioningMainPartitioningTimes[0]);
+          networkPartitioningMainPartitioningTimes[0]);
   fprintf(performanceOutputFile, "MIFLUSHPART\t%lu\tus\n",
-		  networkPartitioningFlushPartitioningTimes[0]);
+          networkPartitioningFlushPartitioningTimes[0]);
   fprintf(performanceOutputFile, "MOMEMALLOC\t%lu\tus\n",
-		  networkPartitioningMemoryAllocationTimes[1]);
+          networkPartitioningMemoryAllocationTimes[1]);
   fprintf(performanceOutputFile, "MOMAINPART\t%lu\tus\n",
-		  networkPartitioningMainPartitioningTimes[1]);
+          networkPartitioningMainPartitioningTimes[1]);
   fprintf(performanceOutputFile, "MOFLUSHPART\t%lu\tus\n",
-		  networkPartitioningFlushPartitioningTimes[1]);
+          networkPartitioningFlushPartitioningTimes[1]);
   fprintf(performanceOutputFile, "MWINPUT\t%lu\tus\n", networkPartitioningWindowPutTimeSum);
   fprintf(performanceOutputFile, "MWINPUTCNT\t%lu\tcalls\n", networkPartitioningWindowPutCount);
   fprintf(performanceOutputFile, "MWINWAIT\t%lu\tus\n", networkPartitioningWindowWaitTimeSum);
@@ -405,7 +405,7 @@ void Measurements::startLocalPartitioningHistogramComputation() {
 void Measurements::stopLocalPartitioningHistogramComputation(uint64_t numberOfElemenets) {
   gettimeofday(&localPartitioningHistogramComputationStop, NULL);
   uint64_t time = timeDiff(localPartitioningHistogramComputationStop,
-						   localPartitioningHistogramComputationStart);
+                           localPartitioningHistogramComputationStart);
   localPartitioningHistogramComputationTimeSum += time;
   ++localPartitioningHistogramComputationCount;
   localPartitioningHistogramComputationElementSum += numberOfElemenets;
@@ -418,7 +418,7 @@ void Measurements::startLocalPartitioningOffsetComputation() {
 void Measurements::stopLocalPartitioningOffsetComputation() {
   gettimeofday(&localPartitioningOffsetComputationStop, NULL);
   uint64_t time = timeDiff(localPartitioningOffsetComputationStop,
-						   localPartitioningOffsetComputationStart);
+                           localPartitioningOffsetComputationStart);
   localPartitioningOffsetComputationTimeSum += time;
   ++localPartitioningOffsetComputationCount;
 }
@@ -430,7 +430,7 @@ void Measurements::startLocalPartitioningMemoryAllocation() {
 void Measurements::stopLocalPartitioningMemoryAllocation(uint64_t bufferSize) {
   gettimeofday(&localPartitioningMemoryAllocationStop, NULL);
   uint64_t time = timeDiff(localPartitioningMemoryAllocationStop,
-						   localPartitioningMemoryAllocationStart);
+                           localPartitioningMemoryAllocationStart);
   localPartitioningMemoryAllocationTimeSum += time;
   ++localPartitioningMemoryAllocationCount;
   localPartitioningMemoryAllocationSizeSum += bufferSize;
@@ -452,18 +452,18 @@ void Measurements::storeLocalPartitioningData() {
   fprintf(performanceOutputFile, "LPTASKTIME\t%lu\tus\n", localPartitioningTaskTimeSum);
   fprintf(performanceOutputFile, "LPTASKCOUNT\t%lu\ttasks\n", localPartitioningTaskCount);
   fprintf(performanceOutputFile, "LPHISTCOMP\t%lu\tus\n",
-		  localPartitioningHistogramComputationTimeSum);
+          localPartitioningHistogramComputationTimeSum);
   fprintf(performanceOutputFile, "LPHISTELEM\t%lu\ttuples\n",
-		  localPartitioningHistogramComputationElementSum);
+          localPartitioningHistogramComputationElementSum);
   fprintf(performanceOutputFile, "LPOFFSET\t%lu\tus\n",
-		  localPartitioningOffsetComputationTimeSum);
+          localPartitioningOffsetComputationTimeSum);
   fprintf(performanceOutputFile, "LPMEMALLOC\t%lu\tus\n",
-		  localPartitioningMemoryAllocationTimeSum);
+          localPartitioningMemoryAllocationTimeSum);
   fprintf(performanceOutputFile, "LPMEMSIZE\t%lu\tbytes\n",
-		  localPartitioningMemoryAllocationSizeSum);
+          localPartitioningMemoryAllocationSizeSum);
   fprintf(performanceOutputFile, "LPPART\t%lu\tus\n", localPartitioningPartitioningTimeSum);
   fprintf(performanceOutputFile, "LPELEMENTS\t%lu\ttuples\n",
-		  localPartitioningPartitioningElementSum);
+          localPartitioningPartitioningElementSum);
 }
 
 /************************************************************/
@@ -569,7 +569,7 @@ void Measurements::sendMeasurementsToAggregator() {
   uint32_t resultSize = NUM_OF_RESULT_ELEMENTS * sizeof(uint64_t);
   uint64_t *results = serializeResults();
   MPI_Send(results, resultSize, MPI_BYTE, hpcjoin::core::Configuration::RESULT_AGGREGATION_NODE,
-		   MSG_TAG_RESULTS, MPI_COMM_WORLD);
+           MSG_TAG_RESULTS, MPI_COMM_WORLD);
 
 }
 
@@ -577,14 +577,14 @@ void Measurements::receiveAllMeasurments(uint32_t numberOfNodes, uint32_t nodeId
 
   serizlizedResults = new uint64_t *[numberOfNodes];
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	if (n == nodeId) {
-	  serizlizedResults[n] = serializeResults();
-	} else {
-	  uint32_t resultSize = NUM_OF_RESULT_ELEMENTS * sizeof(uint64_t);
-	  serizlizedResults[n] = (uint64_t *) calloc(resultSize, 1);
-	  MPI_Recv(serizlizedResults[n], resultSize, MPI_BYTE, n, MSG_TAG_RESULTS,
-			   MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-	}
+    if (n == nodeId) {
+      serizlizedResults[n] = serializeResults();
+    } else {
+      uint32_t resultSize = NUM_OF_RESULT_ELEMENTS * sizeof(uint64_t);
+      serizlizedResults[n] = (uint64_t *) calloc(resultSize, 1);
+      MPI_Recv(serizlizedResults[n], resultSize, MPI_BYTE, n, MSG_TAG_RESULTS,
+               MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
   }
 
 }
@@ -592,25 +592,25 @@ void Measurements::receiveAllMeasurments(uint32_t numberOfNodes, uint32_t nodeId
 void Measurements::printMeasurements(uint32_t numberOfNodes, uint32_t nodeId) {
 
   JOIN_ASSERT(nodeId == hpcjoin::core::Configuration::RESULT_AGGREGATION_NODE, "Measurements",
-			  "Only coordinator should print results");
+              "Only coordinator should print results");
 
   receiveAllMeasurments(numberOfNodes, nodeId);
 
   printf("[RESULTS] Tuples:\t");
   uint64_t totalNumberOfTuples = 0;
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	uint64_t numberOfTuples = serizlizedResults[n][0];
-	printf("%lu\t", numberOfTuples);
-	totalNumberOfTuples += numberOfTuples;
+    uint64_t numberOfTuples = serizlizedResults[n][0];
+    printf("%lu\t", numberOfTuples);
+    totalNumberOfTuples += numberOfTuples;
   }
   printf("\n");
 
   printf("[RESULTS] Join:\t");
   uint64_t averageJoinTime = 0;
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	uint64_t joinTime = serizlizedResults[n][1];
-	printf("%.3f\t", ((double) joinTime) / 1000);
-	averageJoinTime += joinTime;
+    uint64_t joinTime = serizlizedResults[n][1];
+    printf("%.3f\t", ((double) joinTime) / 1000);
+    averageJoinTime += joinTime;
   }
   printf("\n");
   averageJoinTime /= numberOfNodes;
@@ -618,9 +618,9 @@ void Measurements::printMeasurements(uint32_t numberOfNodes, uint32_t nodeId) {
   printf("[RESULTS] Histogram:\t");\
         uint64_t averageHistogramTime = 0;
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	uint64_t histogramTime = serizlizedResults[n][2];
-	printf("%.3f\t", ((double) histogramTime) / 1000);
-	averageHistogramTime += histogramTime;
+    uint64_t histogramTime = serizlizedResults[n][2];
+    printf("%.3f\t", ((double) histogramTime) / 1000);
+    averageHistogramTime += histogramTime;
   }
   printf("\n");
   averageHistogramTime /= numberOfNodes;
@@ -628,9 +628,9 @@ void Measurements::printMeasurements(uint32_t numberOfNodes, uint32_t nodeId) {
   printf("[RESULTS] Network:\t");
   uint64_t averageNetworkTime = 0;
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	uint64_t networkTime = serizlizedResults[n][3];
-	printf("%.3f\t", ((double) networkTime) / 1000);
-	averageNetworkTime += networkTime;
+    uint64_t networkTime = serizlizedResults[n][3];
+    printf("%.3f\t", ((double) networkTime) / 1000);
+    averageNetworkTime += networkTime;
   }
   printf("\n");
   averageNetworkTime /= numberOfNodes;
@@ -638,9 +638,9 @@ void Measurements::printMeasurements(uint32_t numberOfNodes, uint32_t nodeId) {
   printf("[RESULTS] Local:\t");
   uint64_t averageLocalTime = 0;
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	uint64_t localTime = serizlizedResults[n][4];
-	printf("%.3f\t", ((double) localTime) / 1000);
-	averageLocalTime += localTime;
+    uint64_t localTime = serizlizedResults[n][4];
+    printf("%.3f\t", ((double) localTime) / 1000);
+    averageLocalTime += localTime;
   }
   printf("\n");
   averageLocalTime /= numberOfNodes;
@@ -648,9 +648,9 @@ void Measurements::printMeasurements(uint32_t numberOfNodes, uint32_t nodeId) {
   printf("[RESULTS] WinAlloc:\t");
   uint64_t averageWindowAllocTime = 0;
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	uint64_t windowAllocTime = serizlizedResults[n][5];
-	printf("%.3f\t", ((double) windowAllocTime) / 1000);
-	averageWindowAllocTime += windowAllocTime;
+    uint64_t windowAllocTime = serizlizedResults[n][5];
+    printf("%.3f\t", ((double) windowAllocTime) / 1000);
+    averageWindowAllocTime += windowAllocTime;
   }
   printf("\n");
   averageWindowAllocTime /= numberOfNodes;
@@ -658,9 +658,9 @@ void Measurements::printMeasurements(uint32_t numberOfNodes, uint32_t nodeId) {
   printf("[RESULTS] PartWait:\t");
   uint64_t averagePartitionWaitingTime = 0;
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	uint64_t partitionWaitingTime = serizlizedResults[n][6];
-	printf("%.3f\t", ((double) partitionWaitingTime) / 1000);
-	averagePartitionWaitingTime += partitionWaitingTime;
+    uint64_t partitionWaitingTime = serizlizedResults[n][6];
+    printf("%.3f\t", ((double) partitionWaitingTime) / 1000);
+    averagePartitionWaitingTime += partitionWaitingTime;
   }
   printf("\n");
   averagePartitionWaitingTime /= numberOfNodes;
@@ -668,9 +668,9 @@ void Measurements::printMeasurements(uint32_t numberOfNodes, uint32_t nodeId) {
   printf("[RESULTS] LocalPrep:\t");
   uint64_t averageLocalPreparationTime = 0;
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	uint64_t localPreparationTime = serizlizedResults[n][7];
-	printf("%.3f\t", ((double) localPreparationTime) / 1000);
-	averageLocalPreparationTime += localPreparationTime;
+    uint64_t localPreparationTime = serizlizedResults[n][7];
+    printf("%.3f\t", ((double) localPreparationTime) / 1000);
+    averageLocalPreparationTime += localPreparationTime;
   }
   printf("\n");
   averageLocalPreparationTime /= numberOfNodes;
@@ -678,9 +678,9 @@ void Measurements::printMeasurements(uint32_t numberOfNodes, uint32_t nodeId) {
   printf("[RESULTS] LocalPart:\t");
   uint64_t averageLocalPartitioningTime = 0;
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	uint64_t localPartitioningTime = serizlizedResults[n][8];
-	printf("%.3f\t", ((double) localPartitioningTime) / 1000);
-	averageLocalPartitioningTime += localPartitioningTime;
+    uint64_t localPartitioningTime = serizlizedResults[n][8];
+    printf("%.3f\t", ((double) localPartitioningTime) / 1000);
+    averageLocalPartitioningTime += localPartitioningTime;
   }
   printf("\n");
   averageLocalPartitioningTime /= numberOfNodes;
@@ -688,16 +688,16 @@ void Measurements::printMeasurements(uint32_t numberOfNodes, uint32_t nodeId) {
   printf("[RESULTS] LocalBP:\t");
   uint64_t averageLocalBuildProbeTime = 0;
   for (uint32_t n = 0; n < numberOfNodes; ++n) {
-	uint64_t localBuildProbeTime = serizlizedResults[n][9];
-	printf("%.3f\t", ((double) localBuildProbeTime) / 1000);
-	averageLocalBuildProbeTime += localBuildProbeTime;
+    uint64_t localBuildProbeTime = serizlizedResults[n][9];
+    printf("%.3f\t", ((double) localBuildProbeTime) / 1000);
+    averageLocalBuildProbeTime += localBuildProbeTime;
   }
   printf("\n");
   averageLocalBuildProbeTime /= numberOfNodes;
 
   printf("[RESULTS] Summary:\t%lu\t%.3f\t%.3f\t%.3f\t%.3f\n", totalNumberOfTuples,
-		 ((double) averageJoinTime) / 1000, ((double) averageHistogramTime) / 1000,
-		 ((double) averageNetworkTime) / 1000, ((double) averageLocalTime) / 1000);
+         ((double) averageJoinTime) / 1000, ((double) averageHistogramTime) / 1000,
+         ((double) averageNetworkTime) / 1000, ((double) averageLocalTime) / 1000);
 
 }
 
@@ -723,27 +723,27 @@ void Measurements::init(uint32_t nodeId, uint32_t numberOfNodes, std::string tag
 
   uint64_t experimentId = 0;
   if (nodeId == hpcjoin::core::Configuration::RESULT_AGGREGATION_NODE) {
-	struct timeval currentTime;
-	gettimeofday(&currentTime, NULL);
-	experimentId = currentTime.tv_sec * 1000000L + currentTime.tv_usec;
-	sprintf(experimentFullPath, "%s/%s-%d-%lu", cwdPath, tag.c_str(), numberOfNodes,
-			experimentId);
-	mkdir(experimentFullPath, S_IRUSR | S_IWUSR | S_IXUSR);
+    struct timeval currentTime;
+    gettimeofday(&currentTime, NULL);
+    experimentId = currentTime.tv_sec * 1000000L + currentTime.tv_usec;
+    sprintf(experimentFullPath, "%s/%s-%d-%lu", cwdPath, tag.c_str(), numberOfNodes,
+            experimentId);
+    mkdir(experimentFullPath, S_IRUSR | S_IWUSR | S_IXUSR);
   }
 
   MPI_Bcast(&experimentId, 1, MPI_UINT64_T, hpcjoin::core::Configuration::RESULT_AGGREGATION_NODE,
-			MPI_COMM_WORLD);
+            MPI_COMM_WORLD);
 
   sprintf(performanceFullPath, "%s/%s-%d-%lu/%d.perf", cwdPath, tag.c_str(), numberOfNodes,
-		  experimentId, nodeId);
+          experimentId, nodeId);
   performanceOutputFile = fopen(performanceFullPath, "w");
 
   sprintf(metaDataFullPath, "%s/%s-%d-%lu/%d.info", cwdPath, tag.c_str(), numberOfNodes,
-		  experimentId, nodeId);
+          experimentId, nodeId);
   metaDataOutputFile = fopen(metaDataFullPath, "w");
 
   if (nodeId == hpcjoin::core::Configuration::RESULT_AGGREGATION_NODE) {
-	printf("[INFO] Experiment data located at %s\n", experimentFullPath);
+    printf("[INFO] Experiment data located at %s\n", experimentFullPath);
   }
 
 }
@@ -796,8 +796,8 @@ void Measurements::startHardwareCounters() {
 
   int ret = 0;
   if ((ret = PAPI_start_counters(events, PAPI_COUNT)) != PAPI_OK) {
-	fprintf(stderr, "PAPI failed to start counters: %s\n", PAPI_strerror(ret));
-	exit(1);
+    fprintf(stderr, "PAPI failed to start counters: %s\n", PAPI_strerror(ret));
+    exit(1);
   }
 
 }
@@ -808,13 +808,13 @@ void Measurements::printHardwareCounters(const char *name) {
 
   int ret = 0;
   if ((ret = PAPI_stop_counters(values, PAPI_COUNT)) != PAPI_OK) {
-	fprintf(stderr, "PAPI failed to read counters: %s\n", PAPI_strerror(ret));
-	exit(1);
+    fprintf(stderr, "PAPI failed to read counters: %s\n", PAPI_strerror(ret));
+    exit(1);
   }
 
   printf("[REPORT][%s] PAPI Values:", name);
   for (uint32_t i = 0; i < PAPI_COUNT; ++i) {
-	printf("\t%lld", values[i]);
+    printf("\t%lld", values[i]);
   }
   printf("\n");
 
@@ -825,7 +825,7 @@ void Measurements::printHardwareCounters(const char *name) {
 int32_t parseInfoLine(char *line) {
   int32_t i = strlen(line);
   while (*line < '0' || *line > '9')
-	line++;
+    line++;
   line[i - 3] = '\0';
   i = atoi(line);
   return i;
@@ -837,10 +837,10 @@ void Measurements::printMemoryUtilization(const char *name) {
   char line[128];
 
   while (fgets(line, 128, file) != NULL) {
-	if (strncmp(line, "VmSize:", 7) == 0) {
-	  memory = parseInfoLine(line);
-	  break;
-	}
+    if (strncmp(line, "VmSize:", 7) == 0) {
+      memory = parseInfoLine(line);
+      break;
+    }
   }
   fclose(file);
 
