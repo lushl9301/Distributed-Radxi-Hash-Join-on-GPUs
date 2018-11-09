@@ -202,7 +202,7 @@ void HashJoin::join() {
     delete task;
 
   }
-  std::cout << time << std::endl;
+  std::cout << this->nodeId << " " << time << std::endl;
   Measurements::stopLocalProcessing();
 
   JOIN_MEM_DEBUG("Local phase completed");

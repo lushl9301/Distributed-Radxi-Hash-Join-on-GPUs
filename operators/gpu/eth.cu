@@ -117,7 +117,11 @@ int simple_hash_join_eth(hpcjoin::data::CompressedTuple *hRelR,
                          uint32_t keyShift,
                          int id,
                          float *time) {
-  cudaSetDevice(id);
+  //cudaSetDevice(id % 2);
+  cudaError_t cudaStat1 = cudaSetDevice(id % 2);
+  if(cudaStat1 != cudaSuccess) {
+    std::cout << "ERROR DEVICE SET FAILED\n" << std::endl;
+  }
   cudaDeviceReset();
   cudaDeviceSynchronize();
 
